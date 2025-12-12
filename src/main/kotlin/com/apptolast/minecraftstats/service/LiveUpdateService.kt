@@ -113,9 +113,9 @@ class LiveUpdateService(
     }
     
     /**
-     * Check for new log events every 10 seconds
+     * Check for new log events every 3 seconds for real-time updates
      */
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 3000)
     fun broadcastNewEvents() {
         try {
             val recentEvents = logService.getRecentEvents(20)

@@ -44,6 +44,28 @@ class ApiController(
         return ResponseEntity.ok(logService.getRecentChat(limit))
     }
     
+    /**
+     * Get historical events from the last N days (default 30 days = 1 month)
+     */
+    @GetMapping("/events/history")
+    fun getHistoricalEvents(
+        @RequestParam(defaultValue = "30") days: Int,
+        @RequestParam(defaultValue = "500") limit: Int
+    ): ResponseEntity<List<LogEntry>> {
+        return ResponseEntity.ok(logService.getHistoricalEvents(days.coerceIn(1, 90), limit.coerceIn(1, 2000)))
+    }
+    
+    /**
+     * Get historical chat from the last N days (default 30 days = 1 month)
+     */
+    @GetMapping("/chat/history")
+    fun getHistoricalChat(
+        @RequestParam(defaultValue = "30") days: Int,
+        @RequestParam(defaultValue = "500") limit: Int
+    ): ResponseEntity<List<LogEntry>> {
+        return ResponseEntity.ok(logService.getHistoricalChat(days.coerceIn(1, 90), limit.coerceIn(1, 2000)))
+    }
+    
     @GetMapping("/advancements/{uuid}")
     fun getPlayerAdvancements(@PathVariable uuid: String): ResponseEntity<PlayerAdvancements> {
         val advancements = advancementService.getPlayerAdvancements(uuid)
