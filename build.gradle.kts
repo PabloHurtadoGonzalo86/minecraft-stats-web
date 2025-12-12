@@ -29,7 +29,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	
 	// Caffeine cache
-	implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+	implementation("com.github.ben-manes.caffeine:caffeine:3.2.3")
 	
 	// Coroutines
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
