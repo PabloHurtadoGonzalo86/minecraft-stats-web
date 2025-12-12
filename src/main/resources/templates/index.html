@@ -810,11 +810,11 @@
                 const chat = await chatRes.json();
                 chat.reverse().forEach(addChatMessage);
                 
-                // Load new data
-                loadItemStats();
-                loadRecords();
-                loadActivityStats();
-                loadSessionStats();
+                // Load new data (await each to ensure proper execution)
+                await loadItemStats();
+                await loadRecords();
+                await loadActivityStats();
+                await loadSessionStats();
                 
             } catch (e) {
                 console.error('Error loading initial data:', e);
