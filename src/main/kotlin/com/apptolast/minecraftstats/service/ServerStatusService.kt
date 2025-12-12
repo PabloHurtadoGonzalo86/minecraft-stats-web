@@ -111,8 +111,8 @@ class ServerStatusService(
     
     private fun loadServerProperties(): Properties {
         val props = Properties()
-        val propsPath = properties.statsPath.replace("/world/stats", "/server.properties")
-        val propsFile = File(propsPath)
+        val basePath = getBasePath()
+        val propsFile = File(basePath, "server.properties")
         
         if (propsFile.exists()) {
             try {
@@ -125,10 +125,14 @@ class ServerStatusService(
         return props
     }
     
+    private fun getBasePath(): String {
+        val statsPath = properties.statsPath
+        return statsPath.substringBefore("/server_chavalda").substringBefore("/world")
+    }
+    
     private fun getServerVersion(): String {
-        // Try to get version from fabric manifest
-        val manifestPath = properties.statsPath.replace("/world/stats", "/.fabric-manifest.json")
-        val manifestFile = File(manifestPath)
+        val basePath = getBasePath()
+        val manifestFile = File(basePath, ".fabric-manifest.json")
         
         if (manifestFile.exists()) {
             try {
@@ -150,8 +154,8 @@ class ServerStatusService(
     private fun getRconPort(): Int = 25575
     
     private fun getRconPassword(): String? {
-        val propsPath = properties.statsPath.replace("/world/stats", "/.rcon-cli.env")
-        val propsFile = File(propsPath)
+        val basePath = getBasePath()
+        val propsFile = File(basePath, ".rcon-cli.env")
         
         if (propsFile.exists()) {
             try {

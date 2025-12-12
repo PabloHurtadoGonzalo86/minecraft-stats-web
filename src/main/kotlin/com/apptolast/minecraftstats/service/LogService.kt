@@ -29,8 +29,14 @@ class LogService(
     private val deathPattern = Regex("""\[Server thread/INFO\]: (\w+) (was slain|was killed|drowned|fell|burned|starved|died|blew up|hit the ground|went up in flames|walked into|tried to swim|was shot|was pummeled|was fireballed|was impaled|was squashed|was skewered|was pricked|suffocated|experienced kinetic|was blown up|was struck|withered)""")
     private val advancementPattern = Regex("""\[Server thread/INFO\]: (\w+) has (made the advancement|completed the challenge|reached the goal) \[(.+)\]""")
     
+    private fun getBasePath(): String {
+        // Get base /data path from stats path (e.g., /minecraft-data/server_chavalda/stats -> /minecraft-data)
+        val statsPath = properties.statsPath
+        return statsPath.substringBefore("/server_chavalda").substringBefore("/world")
+    }
+    
     fun getRecentLogs(maxLines: Int = 100): List<LogEntry> {
-        val logsPath = properties.statsPath.replace("/world/stats", "/logs")
+        val logsPath = "${getBasePath()}/logs"
         val latestLog = File(logsPath, "latest.log")
         
         if (!latestLog.exists()) {
