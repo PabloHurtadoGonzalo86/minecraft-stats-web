@@ -642,7 +642,7 @@
             stompClient.connect({}, function(frame) {
                 updateConnectionStatus(true);
                 
-                // Subscribe to server time (every 5 seconds)
+                // Subscribe to server time (every second for real-time clock)
                 stompClient.subscribe('/topic/time', function(message) {
                     const update = JSON.parse(message.body);
                     updateServerTime(update.serverTime);
@@ -654,10 +654,20 @@
                     updateServerStatus(update.data);
                 });
                 
-                // Subscribe to events
+                // Subscribe to ALL events (join, leave, death, advancement, chat)
                 stompClient.subscribe('/topic/events', function(message) {
                     const update = JSON.parse(message.body);
                     addEvent(update.data, update.serverTime);
+                    // Also add chat to chat feed if it's a CHAT event
+                    if (update.type === 'CHAT') {
+                        addChatMessage(update.data);
+                    }
+                });
+                
+                // Subscribe to chat-only topic (dedicated)
+                stompClient.subscribe('/topic/chat', function(message) {
+                    const update = JSON.parse(message.body);
+                    addChatMessage(update.data);
                 });
                 
                 // Subscribe to player times (for real-time counters)
@@ -670,6 +680,12 @@
                 stompClient.subscribe('/topic/stats', function(message) {
                     const update = JSON.parse(message.body);
                     updateStats(update.data);
+                });
+                
+                // Subscribe to item stats updates
+                stompClient.subscribe('/topic/items', function(message) {
+                    const update = JSON.parse(message.body);
+                    updateItemStats(update.data);
                 });
                 
                 loadInitialData();
@@ -712,6 +728,15 @@
             if (status.lastUpdatedFormatted) {
                 document.getElementById('last-update').textContent = status.lastUpdatedFormatted;
             }
+        }
+        
+        function updateItemStats(items) {
+            if (items.mined) renderItemList('top-mined', items.mined.entries, '⛏️');
+            if (items.used) renderItemList('top-used', items.used.entries, '🖱️');
+            if (items.crafted) renderItemList('top-crafted', items.crafted.entries, '🔨');
+            if (items.killed) renderItemList('top-killed', items.killed.entries, '💀');
+            if (items.killed_by) renderItemList('top-killed-by', items.killed_by.entries, '☠️');
+            if (items.picked_up) renderItemList('top-picked-up', items.picked_up.entries, '🤲');
         }
         
         function updatePlayerTimes(players) {

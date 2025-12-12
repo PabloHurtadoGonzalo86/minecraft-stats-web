@@ -1,6 +1,7 @@
 package com.apptolast.minecraftstats.service
 
 import com.apptolast.minecraftstats.model.LiveUpdate
+import com.apptolast.minecraftstats.model.LogEntryType
 import com.apptolast.minecraftstats.model.RealTimePlayerStats
 import com.apptolast.minecraftstats.model.ServerTime
 import org.slf4j.LoggerFactory
@@ -12,22 +13,27 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentLinkedDeque
 
 /**
  * Service for broadcasting real-time updates via WebSocket
+ * Based on: https://docs.spring.io/spring-framework/reference/web/websocket/stomp.html
  */
 @Service
 class LiveUpdateService(
     private val messagingTemplate: SimpMessagingTemplate,
     private val serverStatusService: ServerStatusService,
     private val logService: LogService,
-    private val statsService: StatsService
+    private val statsService: StatsService,
+    private val itemStatsService: ItemStatsService
 ) {
     private val logger = LoggerFactory.getLogger(LiveUpdateService::class.java)
     
-    private var lastSeenLogTimestamp: String? = null
-    private val recentBroadcasts = ConcurrentLinkedQueue<String>()
+    // Use fullDateTime (includes date) to properly track seen events
+    private var lastSeenEventKey: String? = null
+    private var lastSeenChatKey: String? = null
+    private val recentEventBroadcasts = ConcurrentLinkedDeque<String>()
+    private val recentChatBroadcasts = ConcurrentLinkedDeque<String>()
     
     private val timezone = ZoneId.of("Europe/Madrid")
     private val isoFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -118,27 +124,28 @@ class LiveUpdateService(
     @Scheduled(fixedRate = 1000)
     fun broadcastNewEvents() {
         try {
-            val recentEvents = logService.getRecentEvents(20)
+            val recentEvents = logService.getRecentEvents(50)
             
             if (recentEvents.isEmpty()) return
             
-            val newEvents = if (lastSeenLogTimestamp != null) {
-                recentEvents.dropWhile { it.timestamp != lastSeenLogTimestamp }.drop(1)
-            } else {
-                listOf()
-            }
-            
-            lastSeenLogTimestamp = recentEvents.lastOrNull()?.timestamp
-            
-            newEvents.forEach { event ->
-                val eventKey = "${event.fullDateTime}-${event.type}-${event.playerName}"
-                if (!recentBroadcasts.contains(eventKey)) {
-                    recentBroadcasts.add(eventKey)
-                    if (recentBroadcasts.size > 100) recentBroadcasts.poll()
+            // Find new events using fullDateTime for uniqueness
+            recentEvents.forEach { event ->
+                val eventKey = "${event.fullDateTime}-${event.type}-${event.playerName}-${event.message?.hashCode()}"
+                
+                if (!recentEventBroadcasts.contains(eventKey)) {
+                    recentEventBroadcasts.addLast(eventKey)
+                    // Keep only last 200 to avoid memory issues
+                    while (recentEventBroadcasts.size > 200) recentEventBroadcasts.removeFirst()
                     
                     val update = createLiveUpdate(event.type.name, event)
                     messagingTemplate.convertAndSend("/topic/events", update)
-                    logger.debug("Broadcasted event: ${event.type} - ${event.playerName}")
+                    
+                    // Also send chat to dedicated chat topic
+                    if (event.type == LogEntryType.CHAT) {
+                        messagingTemplate.convertAndSend("/topic/chat", update)
+                    }
+                    
+                    logger.debug("Broadcasted event: ${event.type} - ${event.playerName} at ${event.fullDateTime}")
                 }
             }
         } catch (e: Exception) {
@@ -147,9 +154,31 @@ class LiveUpdateService(
     }
     
     /**
-     * Broadcast stats update every 2 minutes
+     * Broadcast item stats every 30 seconds
      */
-    @Scheduled(fixedRate = 120000)
+    @Scheduled(fixedRate = 30000)
+    fun broadcastItemStats() {
+        try {
+            val items = mapOf(
+                "mined" to itemStatsService.getTopMinedBlocks(10),
+                "used" to itemStatsService.getTopUsedItems(10),
+                "crafted" to itemStatsService.getTopCraftedItems(10),
+                "killed" to itemStatsService.getTopKilledMobs(10),
+                "killed_by" to itemStatsService.getTopKilledByMobs(10),
+                "picked_up" to itemStatsService.getTopPickedUpItems(10)
+            )
+            val update = createLiveUpdate("ITEM_STATS", items)
+            messagingTemplate.convertAndSend("/topic/items", update)
+            logger.debug("Broadcasted item stats")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting item stats: ${e.message}")
+        }
+    }
+    
+    /**
+     * Broadcast stats update every 30 seconds (was 2 minutes)
+     */
+    @Scheduled(fixedRate = 30000)
     fun broadcastStatsUpdate() {
         try {
             val stats = statsService.getServerStats()
