@@ -261,3 +261,122 @@ data class RealTimePlayerStats(
     val isOnline: Boolean = false,
     val lastSeen: String? = null
 )
+
+// ============== Item Statistics Models ==============
+
+data class ItemLeaderboard(
+    val category: String, // mined, used, picked_up, killed, killed_by
+    val categoryDisplay: String,
+    val entries: List<ItemEntry>
+)
+
+data class ItemEntry(
+    val itemId: String, // minecraft:diamond
+    val itemName: String, // Diamond
+    val count: Long,
+    val iconUrl: String? = null
+)
+
+data class PlayerItemStats(
+    val uuid: String,
+    val name: String,
+    val topMined: List<ItemEntry>,
+    val topUsed: List<ItemEntry>,
+    val topPickedUp: List<ItemEntry>,
+    val topKilled: List<ItemEntry>,
+    val topKilledBy: List<ItemEntry>
+)
+
+// ============== Session Analysis Models ==============
+
+data class PlayerSession(
+    val playerName: String,
+    val playerUuid: String?,
+    val joinTime: String,
+    val joinTimestamp: Long,
+    val leaveTime: String?,
+    val leaveTimestamp: Long?,
+    val durationMinutes: Long?,
+    val durationFormatted: String?
+)
+
+data class SessionStats(
+    val totalSessions: Int,
+    val averageSessionMinutes: Long,
+    val averageSessionFormatted: String,
+    val longestSession: PlayerSession?,
+    val recentSessions: List<PlayerSession>,
+    val sessionsByPlayer: Map<String, List<PlayerSession>>
+)
+
+// ============== Activity Analysis Models ==============
+
+data class ActivityStats(
+    val hourlyActivity: Map<Int, Int>, // Hour (0-23) -> event count
+    val dailyActivity: Map<String, Int>, // Date -> event count
+    val weekdayActivity: Map<String, Int>, // Monday-Sunday -> event count
+    val mostActiveHour: Int,
+    val mostActiveDay: String,
+    val peakPlayers: Int,
+    val peakPlayersDate: String
+)
+
+// ============== Advancement Timeline Models ==============
+
+data class AdvancementTimeline(
+    val uuid: String,
+    val playerName: String,
+    val timeline: List<AdvancementEvent>,
+    val totalCompleted: Int,
+    val firstAdvancement: AdvancementEvent?,
+    val lastAdvancement: AdvancementEvent?
+)
+
+data class AdvancementEvent(
+    val advancementId: String,
+    val advancementName: String,
+    val category: String, // story, adventure, nether, end, husbandry
+    val completedAt: String,
+    val timestamp: Long
+)
+
+// ============== Biome Exploration Models ==============
+
+data class BiomeExploration(
+    val uuid: String,
+    val playerName: String,
+    val visitedBiomes: List<BiomeVisit>,
+    val totalBiomesVisited: Int,
+    val totalBiomesInGame: Int,
+    val explorationPercentage: Int
+)
+
+data class BiomeVisit(
+    val biomeId: String, // minecraft:flower_forest
+    val biomeName: String, // Flower Forest
+    val visitedAt: String,
+    val timestamp: Long
+)
+
+// ============== Server Records Models ==============
+
+data class ServerRecords(
+    val mostDiamondsMined: RecordEntry?,
+    val longestBoatDistance: RecordEntry?,
+    val mostMobsKilled: RecordEntry?,
+    val mostDeaths: RecordEntry?,
+    val longestPlayTime: RecordEntry?,
+    val mostItemsCrafted: RecordEntry?,
+    val mostBlocksMined: RecordEntry?,
+    val mostFishCaught: RecordEntry?,
+    val mostVillagerTrades: RecordEntry?,
+    val mostJumps: RecordEntry?
+)
+
+data class RecordEntry(
+    val playerName: String,
+    val playerUuid: String,
+    val value: Long,
+    val formattedValue: String,
+    val recordName: String
+)

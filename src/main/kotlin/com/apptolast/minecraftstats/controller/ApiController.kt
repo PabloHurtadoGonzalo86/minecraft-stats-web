@@ -11,7 +11,9 @@ class ApiController(
     private val statsService: StatsService,
     private val serverStatusService: ServerStatusService,
     private val logService: LogService,
-    private val advancementService: AdvancementService
+    private val advancementService: AdvancementService,
+    private val itemStatsService: ItemStatsService,
+    private val sessionAnalysisService: SessionAnalysisService
 ) {
 
     @GetMapping("/stats")
@@ -74,6 +76,67 @@ class ApiController(
         } else {
             ResponseEntity.notFound().build()
         }
+    }
+    
+    // ============== Item Statistics Endpoints ==============
+    
+    @GetMapping("/items/mined")
+    fun getTopMinedBlocks(@RequestParam(defaultValue = "20") limit: Int): ResponseEntity<ItemLeaderboard> {
+        return ResponseEntity.ok(itemStatsService.getTopMinedBlocks(limit.coerceIn(1, 100)))
+    }
+    
+    @GetMapping("/items/used")
+    fun getTopUsedItems(@RequestParam(defaultValue = "20") limit: Int): ResponseEntity<ItemLeaderboard> {
+        return ResponseEntity.ok(itemStatsService.getTopUsedItems(limit.coerceIn(1, 100)))
+    }
+    
+    @GetMapping("/items/picked_up")
+    fun getTopPickedUpItems(@RequestParam(defaultValue = "20") limit: Int): ResponseEntity<ItemLeaderboard> {
+        return ResponseEntity.ok(itemStatsService.getTopPickedUpItems(limit.coerceIn(1, 100)))
+    }
+    
+    @GetMapping("/items/crafted")
+    fun getTopCraftedItems(@RequestParam(defaultValue = "20") limit: Int): ResponseEntity<ItemLeaderboard> {
+        return ResponseEntity.ok(itemStatsService.getTopCraftedItems(limit.coerceIn(1, 100)))
+    }
+    
+    @GetMapping("/items/killed")
+    fun getTopKilledMobs(@RequestParam(defaultValue = "20") limit: Int): ResponseEntity<ItemLeaderboard> {
+        return ResponseEntity.ok(itemStatsService.getTopKilledMobs(limit.coerceIn(1, 100)))
+    }
+    
+    @GetMapping("/items/killed_by")
+    fun getTopKilledByMobs(@RequestParam(defaultValue = "20") limit: Int): ResponseEntity<ItemLeaderboard> {
+        return ResponseEntity.ok(itemStatsService.getTopKilledByMobs(limit.coerceIn(1, 100)))
+    }
+    
+    @GetMapping("/items/player/{uuid}")
+    fun getPlayerItemStats(@PathVariable uuid: String): ResponseEntity<PlayerItemStats> {
+        val stats = itemStatsService.getPlayerItemStats(uuid)
+        return if (stats != null) {
+            ResponseEntity.ok(stats)
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+    
+    // ============== Session & Activity Endpoints ==============
+    
+    @GetMapping("/sessions")
+    fun getSessionStats(@RequestParam(defaultValue = "30") days: Int): ResponseEntity<SessionStats> {
+        return ResponseEntity.ok(sessionAnalysisService.getSessionStats(days.coerceIn(1, 90)))
+    }
+    
+    @GetMapping("/activity")
+    fun getActivityStats(@RequestParam(defaultValue = "30") days: Int): ResponseEntity<ActivityStats> {
+        return ResponseEntity.ok(sessionAnalysisService.getActivityStats(days.coerceIn(1, 90)))
+    }
+    
+    // ============== Records Endpoint ==============
+    
+    @GetMapping("/records")
+    fun getServerRecords(): ResponseEntity<ServerRecords> {
+        return ResponseEntity.ok(itemStatsService.getServerRecords())
     }
 
     @GetMapping("/health")

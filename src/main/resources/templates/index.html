@@ -379,11 +379,186 @@
             </div>
         </section>
 
+        <!-- Server Records -->
+        <section class="mb-12" id="records-section">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-trophy text-yellow-400 mr-3"></i>
+                🏆 Records del Servidor
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="records-container">
+                <p class="text-gray-500">Cargando records...</p>
+            </div>
+        </section>
+
+        <!-- Item Statistics -->
+        <section class="mb-12" id="items-section">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-box text-orange-400 mr-3"></i>
+                📦 Estadísticas de Items
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Top Mined -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-pickaxe text-gray-400 mr-2"></i>
+                        ⛏️ Bloques Más Minados
+                    </h3>
+                    <div id="top-mined" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+                
+                <!-- Top Used -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-hand-pointer text-blue-400 mr-2"></i>
+                        🖱️ Items Más Usados
+                    </h3>
+                    <div id="top-used" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+                
+                <!-- Top Crafted -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-hammer text-orange-400 mr-2"></i>
+                        🔨 Items Más Crafteados
+                    </h3>
+                    <div id="top-crafted" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+                
+                <!-- Top Killed Mobs -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-skull text-red-400 mr-2"></i>
+                        💀 Mobs Más Eliminados
+                    </h3>
+                    <div id="top-killed" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+                
+                <!-- Deaths by Mob -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-skull-crossbones text-pink-400 mr-2"></i>
+                        ☠️ Muertes por Mob
+                    </h3>
+                    <div id="top-killed-by" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+                
+                <!-- Top Picked Up -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-hand-holding text-green-400 mr-2"></i>
+                        🤲 Items Más Recogidos
+                    </h3>
+                    <div id="top-picked-up" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activity Analysis -->
+        <section class="mb-12" id="activity-section">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-chart-line text-cyan-400 mr-3"></i>
+                📈 Análisis de Actividad (30 días)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Most Active Hour -->
+                <div class="bg-gray-800/50 rounded-lg p-6 text-center card-hover">
+                    <i class="fas fa-clock text-yellow-400 text-3xl mb-3"></i>
+                    <p class="text-3xl font-bold text-yellow-400" id="most-active-hour">--:00</p>
+                    <p class="text-sm text-gray-400">Hora Más Activa</p>
+                </div>
+                
+                <!-- Most Active Day -->
+                <div class="bg-gray-800/50 rounded-lg p-6 text-center card-hover">
+                    <i class="fas fa-calendar-day text-green-400 text-3xl mb-3"></i>
+                    <p class="text-2xl font-bold text-green-400" id="most-active-day">-</p>
+                    <p class="text-sm text-gray-400">Día Más Activo</p>
+                </div>
+                
+                <!-- Peak Players -->
+                <div class="bg-gray-800/50 rounded-lg p-6 text-center card-hover">
+                    <i class="fas fa-users text-blue-400 text-3xl mb-3"></i>
+                    <p class="text-3xl font-bold text-blue-400" id="peak-players">0</p>
+                    <p class="text-sm text-gray-400">Pico de Jugadores</p>
+                    <p class="text-xs text-gray-500" id="peak-players-date">-</p>
+                </div>
+                
+                <!-- Total Sessions -->
+                <div class="bg-gray-800/50 rounded-lg p-6 text-center card-hover">
+                    <i class="fas fa-door-open text-purple-400 text-3xl mb-3"></i>
+                    <p class="text-3xl font-bold text-purple-400" id="total-sessions">0</p>
+                    <p class="text-sm text-gray-400">Sesiones Totales</p>
+                </div>
+            </div>
+            
+            <!-- Hourly Activity Chart (Simple) -->
+            <div class="bg-gray-800/50 rounded-lg p-6 mt-6">
+                <h3 class="text-lg font-bold mb-4">⏰ Actividad por Hora</h3>
+                <div id="hourly-chart" class="flex items-end justify-between h-32 gap-1">
+                    <!-- Generated by JS -->
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>00:00</span>
+                    <span>06:00</span>
+                    <span>12:00</span>
+                    <span>18:00</span>
+                    <span>23:00</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Sessions -->
+        <section class="mb-12" id="sessions-section">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-history text-purple-400 mr-3"></i>
+                🕐 Sesiones Recientes
+            </h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Session Stats -->
+                <div class="bg-gray-800/50 rounded-lg p-6">
+                    <h3 class="text-lg font-bold mb-4">📊 Estadísticas de Sesiones</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Sesión promedio:</span>
+                            <span class="text-green-400 font-mono" id="avg-session">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Sesión más larga:</span>
+                            <span class="text-yellow-400 font-mono" id="longest-session">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Por:</span>
+                            <span class="text-yellow-400" id="longest-session-player">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Sessions List -->
+                <div class="bg-gray-800/50 rounded-lg p-6">
+                    <h3 class="text-lg font-bold mb-4">🚪 Últimas Sesiones</h3>
+                    <div id="recent-sessions" class="space-y-2 max-h-48 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Live Events Feed -->
         <section class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <i class="fas fa-rss text-red-400 mr-3 live-indicator"></i>
-                Eventos en Vivo
+                Eventos en Vivo (⚡ cada 1s)
             </h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Recent Events -->
@@ -635,8 +810,160 @@
                 const chat = await chatRes.json();
                 chat.reverse().forEach(addChatMessage);
                 
+                // Load new data
+                loadItemStats();
+                loadRecords();
+                loadActivityStats();
+                loadSessionStats();
+                
             } catch (e) {
                 console.error('Error loading initial data:', e);
+            }
+        }
+        
+        // Load Item Statistics
+        async function loadItemStats() {
+            try {
+                const [mined, used, crafted, killed, killedBy, pickedUp] = await Promise.all([
+                    fetch('/api/items/mined?limit=10').then(r => r.json()),
+                    fetch('/api/items/used?limit=10').then(r => r.json()),
+                    fetch('/api/items/crafted?limit=10').then(r => r.json()),
+                    fetch('/api/items/killed?limit=10').then(r => r.json()),
+                    fetch('/api/items/killed_by?limit=10').then(r => r.json()),
+                    fetch('/api/items/picked_up?limit=10').then(r => r.json())
+                ]);
+                
+                renderItemList('top-mined', mined.entries, '⛏️');
+                renderItemList('top-used', used.entries, '🖱️');
+                renderItemList('top-crafted', crafted.entries, '🔨');
+                renderItemList('top-killed', killed.entries, '💀');
+                renderItemList('top-killed-by', killedBy.entries, '☠️');
+                renderItemList('top-picked-up', pickedUp.entries, '🤲');
+            } catch (e) {
+                console.error('Error loading item stats:', e);
+            }
+        }
+        
+        function renderItemList(containerId, items, emoji) {
+            const container = document.getElementById(containerId);
+            if (!items || items.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Sin datos</p>';
+                return;
+            }
+            
+            container.innerHTML = items.map((item, i) => `
+                <div class="flex justify-between items-center py-1 ${i < items.length - 1 ? 'border-b border-gray-700/30' : ''}">
+                    <span class="text-sm truncate flex-1" title="${item.itemId}">
+                        ${i < 3 ? ['🥇', '🥈', '🥉'][i] : `${i+1}.`} ${item.itemName}
+                    </span>
+                    <span class="text-green-400 font-mono text-sm ml-2">${item.count.toLocaleString()}</span>
+                </div>
+            `).join('');
+        }
+        
+        // Load Records
+        async function loadRecords() {
+            try {
+                const records = await fetch('/api/records').then(r => r.json());
+                const container = document.getElementById('records-container');
+                
+                const recordsList = [
+                    { data: records.mostDiamondsMined, icon: '💎', color: 'cyan' },
+                    { data: records.longestBoatDistance, icon: '⛵', color: 'blue' },
+                    { data: records.mostMobsKilled, icon: '⚔️', color: 'red' },
+                    { data: records.longestPlayTime, icon: '⏱️', color: 'purple' },
+                    { data: records.mostBlocksMined, icon: '⛏️', color: 'gray' },
+                    { data: records.mostItemsCrafted, icon: '🔨', color: 'orange' },
+                    { data: records.mostDeaths, icon: '💀', color: 'pink' },
+                    { data: records.mostFishCaught, icon: '🐟', color: 'blue' },
+                    { data: records.mostVillagerTrades, icon: '🧑‍🌾', color: 'green' },
+                    { data: records.mostJumps, icon: '🦘', color: 'yellow' }
+                ].filter(r => r.data);
+                
+                if (recordsList.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">Sin records aún</p>';
+                    return;
+                }
+                
+                container.innerHTML = recordsList.map(r => `
+                    <div class="bg-gray-700/50 rounded-lg p-4 text-center card-hover">
+                        <div class="text-2xl mb-2">${r.icon}</div>
+                        <p class="text-${r.color}-400 font-bold text-lg">${r.data.formattedValue}</p>
+                        <p class="text-xs text-gray-400">${r.data.recordName}</p>
+                        <p class="text-sm text-white mt-1">${r.data.playerName}</p>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading records:', e);
+            }
+        }
+        
+        // Load Activity Stats
+        async function loadActivityStats() {
+            try {
+                const activity = await fetch('/api/activity?days=30').then(r => r.json());
+                
+                document.getElementById('most-active-hour').textContent = `${activity.mostActiveHour}:00`;
+                document.getElementById('most-active-day').textContent = activity.mostActiveDay;
+                document.getElementById('peak-players').textContent = activity.peakPlayers;
+                document.getElementById('peak-players-date').textContent = activity.peakPlayersDate;
+                
+                // Render hourly chart
+                renderHourlyChart(activity.hourlyActivity);
+            } catch (e) {
+                console.error('Error loading activity stats:', e);
+            }
+        }
+        
+        function renderHourlyChart(hourlyData) {
+            const container = document.getElementById('hourly-chart');
+            const maxValue = Math.max(...Object.values(hourlyData), 1);
+            
+            container.innerHTML = Object.entries(hourlyData).map(([hour, count]) => {
+                const height = Math.max((count / maxValue) * 100, 2);
+                const color = count === maxValue ? 'bg-yellow-400' : 'bg-green-500';
+                return `
+                    <div class="flex-1 flex flex-col items-center justify-end" title="${hour}:00 - ${count} eventos">
+                        <div class="${color} w-full rounded-t" style="height: ${height}%"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Load Session Stats
+        async function loadSessionStats() {
+            try {
+                const [sessions, activity] = await Promise.all([
+                    fetch('/api/sessions?days=30').then(r => r.json()),
+                    fetch('/api/activity?days=30').then(r => r.json())
+                ]);
+                
+                document.getElementById('total-sessions').textContent = sessions.totalSessions;
+                document.getElementById('avg-session').textContent = sessions.averageSessionFormatted;
+                
+                if (sessions.longestSession) {
+                    document.getElementById('longest-session').textContent = sessions.longestSession.durationFormatted;
+                    document.getElementById('longest-session-player').textContent = sessions.longestSession.playerName;
+                }
+                
+                // Render recent sessions
+                const container = document.getElementById('recent-sessions');
+                if (sessions.recentSessions.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-sm">Sin sesiones recientes</p>';
+                    return;
+                }
+                
+                container.innerHTML = sessions.recentSessions.slice(0, 10).map(s => `
+                    <div class="flex justify-between items-center py-1 border-b border-gray-700/30 text-sm">
+                        <span class="text-white">${s.playerName}</span>
+                        <span class="text-gray-400 text-xs">${s.joinTime}</span>
+                        <span class="${s.durationFormatted === 'En línea' ? 'text-green-400' : 'text-purple-400'} font-mono">
+                            ${s.durationFormatted || '-'}
+                        </span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading session stats:', e);
             }
         }
         
