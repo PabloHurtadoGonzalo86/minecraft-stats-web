@@ -61,7 +61,8 @@ data class PlayerStats(
     val uuid: String,
     val name: String,
     val stats: StatsCategories,
-    val summary: PlayerStatsSummary
+    val summary: PlayerStatsSummary,
+    val detailedStats: DetailedPlayerStats? = null
 )
 
 data class PlayerStatsSummary(
@@ -74,6 +75,67 @@ data class PlayerStatsSummary(
     val distanceWalkedCm: Long,
     val distanceWalkedFormatted: String,
     val jumps: Long
+)
+
+/**
+ * Detailed statistics extracted from minecraft:custom
+ */
+data class DetailedPlayerStats(
+    // Combat
+    val damageDealt: Long = 0,
+    val damageTaken: Long = 0,
+    val damageBlocked: Long = 0,
+    val playerKills: Long = 0,
+    
+    // Movement (in cm, convert to km for display)
+    val walkDistance: Long = 0,
+    val sprintDistance: Long = 0,
+    val swimDistance: Long = 0,
+    val climbDistance: Long = 0,
+    val flyDistance: Long = 0,
+    val boatDistance: Long = 0,
+    val horseDistance: Long = 0,
+    val pigDistance: Long = 0,
+    val striderDistance: Long = 0,
+    val elytraDistance: Long = 0,
+    val fallDistance: Long = 0,
+    val crouchDistance: Long = 0,
+    val walkOnWaterDistance: Long = 0,
+    val walkUnderWaterDistance: Long = 0,
+    
+    // Interactions
+    val chestsOpened: Long = 0,
+    val craftingTableUses: Long = 0,
+    val furnaceUses: Long = 0,
+    val anvilUses: Long = 0,
+    val enchantingTableUses: Long = 0,
+    val smithingTableUses: Long = 0,
+    val brewingStandUses: Long = 0,
+    val beaconUses: Long = 0,
+    val stonecutterUses: Long = 0,
+    val smokerUses: Long = 0,
+    val blastFurnaceUses: Long = 0,
+    
+    // Actions
+    val timesSlept: Long = 0,
+    val sneakTime: Long = 0,
+    val fishCaught: Long = 0,
+    val animalsBreed: Long = 0,
+    val itemsEnchanted: Long = 0,
+    val recordsPlayed: Long = 0,
+    val bellsRung: Long = 0,
+    val raidWins: Long = 0,
+    val raidTriggers: Long = 0,
+    val targetsHit: Long = 0,
+    
+    // Villagers
+    val villagersTraded: Long = 0,
+    val villagersTalked: Long = 0,
+    
+    // Time-based (in ticks, 20 ticks = 1 second)
+    val timeSinceRest: Long = 0,
+    val timeSinceDeath: Long = 0,
+    val totalWorldTime: Long = 0
 )
 
 /**
@@ -109,7 +171,11 @@ data class ServerTotals(
     val totalMobsKilled: Long,
     val totalDeaths: Long,
     val totalPlayTimeTicks: Long,
-    val totalPlayTimeFormatted: String
+    val totalPlayTimeFormatted: String,
+    // Additional server totals
+    val totalDamageDealt: Long = 0,
+    val totalDistanceTraveled: Long = 0,
+    val totalChestsOpened: Long = 0
 )
 
 // ============== Log & Events Models ==============
@@ -120,6 +186,8 @@ enum class LogEntryType {
 
 data class LogEntry(
     val timestamp: String,
+    val fullDateTime: String, // Full date with day/month/year hour:minute:second
+    val date: String, // Just the date part (2025-12-12)
     val type: LogEntryType,
     val playerName: String?,
     val message: String,
@@ -135,7 +203,8 @@ data class ServerStatus(
     val onlinePlayers: List<OnlinePlayer>,
     val motd: String,
     val version: String,
-    val lastUpdated: Long
+    val lastUpdated: Long,
+    val lastUpdatedFormatted: String = "" // Human readable
 )
 
 data class OnlinePlayer(
@@ -167,5 +236,28 @@ data class Advancement(
 data class LiveUpdate(
     val type: String,
     val data: Any,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val timestampFormatted: String = "", // ISO format with timezone
+    val serverTime: ServerTime = ServerTime()
+)
+
+data class ServerTime(
+    val timestamp: Long = System.currentTimeMillis(),
+    val iso: String = "", // 2025-12-12T15:07:28.213Z
+    val date: String = "", // 12/12/2025
+    val time: String = "", // 15:07:28
+    val dayOfWeek: String = "", // Jueves
+    val timezone: String = "Europe/Madrid"
+)
+
+// ============== Real-time Stats ==============
+
+data class RealTimePlayerStats(
+    val uuid: String,
+    val name: String,
+    val playTimeTicks: Long,
+    val playTimeSeconds: Long,
+    val playTimeFormatted: String,
+    val isOnline: Boolean = false,
+    val lastSeen: String? = null
 )

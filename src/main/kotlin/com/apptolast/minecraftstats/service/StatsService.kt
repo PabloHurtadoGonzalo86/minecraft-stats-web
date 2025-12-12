@@ -84,17 +84,80 @@ class StatsService(
             val statsData: MinecraftStatsFile = objectMapper.readValue(statsFile)
             val playerName = playerCache[uuid] ?: uuid
             val summary = calculateSummary(statsData.stats)
+            val detailed = extractDetailedStats(statsData.stats)
             
             PlayerStats(
                 uuid = uuid,
                 name = playerName,
                 stats = statsData.stats,
-                summary = summary
+                summary = summary,
+                detailedStats = detailed
             )
         } catch (e: Exception) {
             logger.error("Error loading stats for UUID $uuid: ${e.message}")
             null
         }
+    }
+    
+    private fun extractDetailedStats(stats: StatsCategories): DetailedPlayerStats {
+        val custom = stats.custom
+        return DetailedPlayerStats(
+            // Combat
+            damageDealt = custom["minecraft:damage_dealt"] ?: 0L,
+            damageTaken = custom["minecraft:damage_taken"] ?: 0L,
+            damageBlocked = custom["minecraft:damage_blocked_by_shield"] ?: 0L,
+            playerKills = custom["minecraft:player_kills"] ?: 0L,
+            
+            // Movement (all in cm)
+            walkDistance = custom["minecraft:walk_one_cm"] ?: 0L,
+            sprintDistance = custom["minecraft:sprint_one_cm"] ?: 0L,
+            swimDistance = custom["minecraft:swim_one_cm"] ?: 0L,
+            climbDistance = custom["minecraft:climb_one_cm"] ?: 0L,
+            flyDistance = custom["minecraft:fly_one_cm"] ?: 0L,
+            boatDistance = custom["minecraft:boat_one_cm"] ?: 0L,
+            horseDistance = custom["minecraft:horse_one_cm"] ?: 0L,
+            pigDistance = custom["minecraft:pig_one_cm"] ?: 0L,
+            striderDistance = custom["minecraft:strider_one_cm"] ?: 0L,
+            elytraDistance = custom["minecraft:aviate_one_cm"] ?: 0L,
+            fallDistance = custom["minecraft:fall_one_cm"] ?: 0L,
+            crouchDistance = custom["minecraft:crouch_one_cm"] ?: 0L,
+            walkOnWaterDistance = custom["minecraft:walk_on_water_one_cm"] ?: 0L,
+            walkUnderWaterDistance = custom["minecraft:walk_under_water_one_cm"] ?: 0L,
+            
+            // Interactions
+            chestsOpened = custom["minecraft:open_chest"] ?: 0L,
+            craftingTableUses = custom["minecraft:interact_with_crafting_table"] ?: 0L,
+            furnaceUses = custom["minecraft:interact_with_furnace"] ?: 0L,
+            anvilUses = custom["minecraft:interact_with_anvil"] ?: 0L,
+            enchantingTableUses = custom["minecraft:interact_with_enchanting_table"] ?: 0L,
+            smithingTableUses = custom["minecraft:interact_with_smithing_table"] ?: 0L,
+            brewingStandUses = custom["minecraft:interact_with_brewingstand"] ?: 0L,
+            beaconUses = custom["minecraft:interact_with_beacon"] ?: 0L,
+            stonecutterUses = custom["minecraft:interact_with_stonecutter"] ?: 0L,
+            smokerUses = custom["minecraft:interact_with_smoker"] ?: 0L,
+            blastFurnaceUses = custom["minecraft:interact_with_blast_furnace"] ?: 0L,
+            
+            // Actions
+            timesSlept = custom["minecraft:sleep_in_bed"] ?: 0L,
+            sneakTime = custom["minecraft:sneak_time"] ?: 0L,
+            fishCaught = custom["minecraft:fish_caught"] ?: 0L,
+            animalsBreed = custom["minecraft:animals_bred"] ?: 0L,
+            itemsEnchanted = custom["minecraft:enchant_item"] ?: 0L,
+            recordsPlayed = custom["minecraft:play_record"] ?: 0L,
+            bellsRung = custom["minecraft:bell_ring"] ?: 0L,
+            raidWins = custom["minecraft:raid_win"] ?: 0L,
+            raidTriggers = custom["minecraft:raid_trigger"] ?: 0L,
+            targetsHit = custom["minecraft:target_hit"] ?: 0L,
+            
+            // Villagers
+            villagersTraded = custom["minecraft:traded_with_villager"] ?: 0L,
+            villagersTalked = custom["minecraft:talked_to_villager"] ?: 0L,
+            
+            // Time-based
+            timeSinceRest = custom["minecraft:time_since_rest"] ?: 0L,
+            timeSinceDeath = custom["minecraft:time_since_death"] ?: 0L,
+            totalWorldTime = custom["minecraft:total_world_time"] ?: 0L
+        )
     }
 
     private fun calculateSummary(stats: StatsCategories): PlayerStatsSummary {
@@ -178,6 +241,13 @@ class StatsService(
         val totalMobsKilled = players.sumOf { it.summary.totalMobsKilled }
         val totalDeaths = players.sumOf { it.summary.totalDeaths }
         val totalPlayTimeTicks = players.sumOf { it.summary.playTimeTicks }
+        val totalDamageDealt = players.sumOf { it.detailedStats?.damageDealt ?: 0L }
+        val totalDistanceTraveled = players.sumOf { 
+            val d = it.detailedStats
+            (d?.walkDistance ?: 0L) + (d?.sprintDistance ?: 0L) + (d?.swimDistance ?: 0L) + 
+            (d?.boatDistance ?: 0L) + (d?.horseDistance ?: 0L) + (d?.flyDistance ?: 0L)
+        }
+        val totalChestsOpened = players.sumOf { it.detailedStats?.chestsOpened ?: 0L }
 
         return ServerTotals(
             totalBlocksMined = totalBlocksMined,
@@ -185,7 +255,10 @@ class StatsService(
             totalMobsKilled = totalMobsKilled,
             totalDeaths = totalDeaths,
             totalPlayTimeTicks = totalPlayTimeTicks,
-            totalPlayTimeFormatted = formatPlayTime(totalPlayTimeTicks)
+            totalPlayTimeFormatted = formatPlayTime(totalPlayTimeTicks),
+            totalDamageDealt = totalDamageDealt,
+            totalDistanceTraveled = totalDistanceTraveled,
+            totalChestsOpened = totalChestsOpened
         )
     }
 }

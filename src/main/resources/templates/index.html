@@ -26,15 +26,24 @@
                 <i class="fas fa-cube text-green-500 mr-3"></i>
                 <span th:text="${serverName}">Server Stats</span>
             </h1>
-            <div class="flex justify-center items-center space-x-4 text-gray-400">
+            <div class="flex justify-center items-center flex-wrap gap-4 text-gray-400">
                 <span id="connection-status" class="flex items-center">
                     <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
                     Conectando...
                 </span>
                 <span>•</span>
-                <span>
-                    <i class="fas fa-clock mr-1"></i>
-                    <span id="last-update" th:text="${stats.lastUpdated}">-</span>
+                <span class="flex items-center">
+                    <i class="fas fa-calendar mr-2"></i>
+                    <span id="server-date">-</span>
+                </span>
+                <span>•</span>
+                <span class="flex items-center text-xl font-mono text-green-400">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span id="server-time" class="live-indicator">--:--:--</span>
+                </span>
+                <span>•</span>
+                <span class="text-xs">
+                    Actualizado: <span id="last-update" th:text="${stats.lastUpdated}">-</span>
                 </span>
             </div>
         </header>
@@ -290,10 +299,16 @@
         function connect() {
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
-            stompClient.debug = null; // Disable debug logs
+            stompClient.debug = null;
             
             stompClient.connect({}, function(frame) {
                 updateConnectionStatus(true);
+                
+                // Subscribe to server time (every 5 seconds)
+                stompClient.subscribe('/topic/time', function(message) {
+                    const update = JSON.parse(message.body);
+                    updateServerTime(update.serverTime);
+                });
                 
                 // Subscribe to server status
                 stompClient.subscribe('/topic/status', function(message) {
@@ -304,22 +319,33 @@
                 // Subscribe to events
                 stompClient.subscribe('/topic/events', function(message) {
                     const update = JSON.parse(message.body);
-                    addEvent(update.data);
+                    addEvent(update.data, update.serverTime);
+                });
+                
+                // Subscribe to player times (for real-time counters)
+                stompClient.subscribe('/topic/player-times', function(message) {
+                    const update = JSON.parse(message.body);
+                    updatePlayerTimes(update.data);
                 });
                 
                 // Subscribe to stats updates
                 stompClient.subscribe('/topic/stats', function(message) {
                     const update = JSON.parse(message.body);
-                    console.log('Stats update received');
+                    updateStats(update.data);
                 });
                 
-                // Load initial data
                 loadInitialData();
                 
             }, function(error) {
                 updateConnectionStatus(false);
-                setTimeout(connect, 5000); // Reconnect after 5 seconds
+                setTimeout(connect, 5000);
             });
+        }
+        
+        function updateServerTime(serverTime) {
+            document.getElementById('server-time').textContent = serverTime.time;
+            document.getElementById('server-date').textContent = `${serverTime.dayOfWeek}, ${serverTime.date}`;
+            document.getElementById('last-update').textContent = serverTime.time;
         }
         
         function updateConnectionStatus(connected) {
@@ -345,10 +371,40 @@
                 </span>`
             ).join('');
             
-            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+            if (status.lastUpdatedFormatted) {
+                document.getElementById('last-update').textContent = status.lastUpdatedFormatted;
+            }
         }
         
-        function addEvent(event) {
+        function updatePlayerTimes(players) {
+            players.forEach(p => {
+                const el = document.getElementById(`player-time-${p.uuid}`);
+                if (el) {
+                    el.textContent = p.playTimeFormatted;
+                    if (p.isOnline) {
+                        el.classList.add('text-green-400');
+                    }
+                }
+            });
+        }
+        
+        function updateStats(data) {
+            if (data.serverTotals) {
+                const t = data.serverTotals;
+                updateStatValue('total-blocks', t.totalBlocksMined);
+                updateStatValue('total-crafted', t.totalItemsCrafted);
+                updateStatValue('total-mobs', t.totalMobsKilled);
+                updateStatValue('total-deaths', t.totalDeaths);
+                updateStatValue('total-damage', t.totalDamageDealt);
+            }
+        }
+        
+        function updateStatValue(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value.toLocaleString();
+        }
+        
+        function addEvent(event, serverTime) {
             const feed = document.getElementById('events-feed');
             const firstChild = feed.firstElementChild;
             if (firstChild && firstChild.textContent.includes('Esperando')) {
@@ -365,11 +421,12 @@
                 default: icon = 'info-circle'; color = 'gray';
             }
             
+            const dateTime = event.fullDateTime || event.timestamp;
             const eventHtml = `
-                <div class="flex items-start space-x-2 py-1 event-enter">
-                    <span class="text-${color}-400"><i class="fas fa-${icon}"></i></span>
-                    <span class="text-gray-400 text-xs">${event.timestamp}</span>
-                    <span class="text-sm">${event.message}</span>
+                <div class="flex items-start space-x-2 py-1 event-enter border-b border-gray-700/50 last:border-0">
+                    <span class="text-${color}-400 w-5"><i class="fas fa-${icon}"></i></span>
+                    <span class="text-gray-500 text-xs whitespace-nowrap">${dateTime}</span>
+                    <span class="text-sm flex-1">${event.message}</span>
                 </div>
             `;
             
@@ -388,9 +445,10 @@
                 feed.innerHTML = '';
             }
             
+            const dateTime = event.fullDateTime || event.timestamp;
             const chatHtml = `
-                <div class="py-1 event-enter">
-                    <span class="text-gray-400 text-xs">${event.timestamp}</span>
+                <div class="py-1 event-enter border-b border-gray-700/50 last:border-0">
+                    <span class="text-gray-500 text-xs">${dateTime}</span>
                     <span class="text-green-400 font-bold">&lt;${event.playerName}&gt;</span>
                     <span class="text-sm">${event.message}</span>
                 </div>
@@ -413,7 +471,7 @@
                 // Load recent events
                 const eventsRes = await fetch('/api/events?limit=20');
                 const events = await eventsRes.json();
-                events.reverse().forEach(addEvent);
+                events.reverse().forEach(e => addEvent(e, null));
                 
                 // Load recent chat
                 const chatRes = await fetch('/api/chat?limit=20');

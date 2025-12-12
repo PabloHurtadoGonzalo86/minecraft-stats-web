@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.io.File
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Properties
 
 /**
@@ -22,6 +25,9 @@ class ServerStatusService(
     
     @Volatile
     private var cachedStatus: ServerStatus? = null
+    
+    private val timezone = ZoneId.of("Europe/Madrid")
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
     
     fun getServerStatus(): ServerStatus {
         return cachedStatus ?: refreshStatus()
@@ -41,6 +47,9 @@ class ServerStatusService(
         
         val serverProperties = loadServerProperties()
         
+        val now = System.currentTimeMillis()
+        val nowFormatted = LocalDateTime.now(timezone).format(dateTimeFormatter)
+        
         val status = ServerStatus(
             online = true,
             playerCount = onlinePlayers.size,
@@ -48,7 +57,8 @@ class ServerStatusService(
             onlinePlayers = onlinePlayers,
             motd = serverProperties["motd"]?.toString() ?: "",
             version = getServerVersion(),
-            lastUpdated = System.currentTimeMillis()
+            lastUpdated = now,
+            lastUpdatedFormatted = nowFormatted
         )
         
         cachedStatus = status
