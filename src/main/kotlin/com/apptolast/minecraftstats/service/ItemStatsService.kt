@@ -17,7 +17,7 @@ class ItemStatsService(
     /**
      * Get top mined blocks across all players
      */
-    @Cacheable("topMined", unless = "#result.isEmpty()")
+    @Cacheable("topMined", unless = "#result.entries.isEmpty()")
     fun getTopMinedBlocks(limit: Int = 20): ItemLeaderboard {
         val serverStats = statsService.getServerStats()
         val aggregated = mutableMapOf<String, Long>()
@@ -50,7 +50,7 @@ class ItemStatsService(
     /**
      * Get top used items across all players
      */
-    @Cacheable("topUsed", unless = "#result.isEmpty()")
+    @Cacheable("topUsed", unless = "#result.entries.isEmpty()")
     fun getTopUsedItems(limit: Int = 20): ItemLeaderboard {
         val serverStats = statsService.getServerStats()
         val aggregated = mutableMapOf<String, Long>()
@@ -83,7 +83,7 @@ class ItemStatsService(
     /**
      * Get top picked up items across all players
      */
-    @Cacheable("topPickedUp", unless = "#result.isEmpty()")
+    @Cacheable("topPickedUp", unless = "#result.entries.isEmpty()")
     fun getTopPickedUpItems(limit: Int = 20): ItemLeaderboard {
         val serverStats = statsService.getServerStats()
         val aggregated = mutableMapOf<String, Long>()
@@ -116,7 +116,7 @@ class ItemStatsService(
     /**
      * Get top killed mobs across all players
      */
-    @Cacheable("topKilled", unless = "#result.isEmpty()")
+    @Cacheable("topKilled", unless = "#result.entries.isEmpty()")
     fun getTopKilledMobs(limit: Int = 20): ItemLeaderboard {
         val serverStats = statsService.getServerStats()
         val aggregated = mutableMapOf<String, Long>()
@@ -149,7 +149,7 @@ class ItemStatsService(
     /**
      * Get deaths by mob type across all players
      */
-    @Cacheable("topKilledBy", unless = "#result.isEmpty()")
+    @Cacheable("topKilledBy", unless = "#result.entries.isEmpty()")
     fun getTopKilledByMobs(limit: Int = 20): ItemLeaderboard {
         val serverStats = statsService.getServerStats()
         val aggregated = mutableMapOf<String, Long>()
@@ -182,7 +182,7 @@ class ItemStatsService(
     /**
      * Get top crafted items across all players
      */
-    @Cacheable("topCrafted", unless = "#result.isEmpty()")
+    @Cacheable("topCrafted", unless = "#result.entries.isEmpty()")
     fun getTopCraftedItems(limit: Int = 20): ItemLeaderboard {
         val serverStats = statsService.getServerStats()
         val aggregated = mutableMapOf<String, Long>()
