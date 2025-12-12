@@ -919,12 +919,15 @@
             const container = document.getElementById('hourly-chart');
             const maxValue = Math.max(...Object.values(hourlyData), 1);
             
-            container.innerHTML = Object.entries(hourlyData).map(([hour, count]) => {
-                const height = Math.max((count / maxValue) * 100, 2);
+            // Sort by hour (0-23)
+            const sortedEntries = Object.entries(hourlyData).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+            
+            container.innerHTML = sortedEntries.map(([hour, count]) => {
+                const heightPx = Math.max(Math.round((count / maxValue) * 128), 2); // 128px = h-32
                 const color = count === maxValue ? 'bg-yellow-400' : 'bg-green-500';
                 return `
-                    <div class="flex-1 flex flex-col items-center justify-end" title="${hour}:00 - ${count} eventos">
-                        <div class="${color} w-full rounded-t" style="height: ${height}%"></div>
+                    <div class="flex-1 flex flex-col items-center justify-end h-full" title="${hour}:00 - ${count} eventos">
+                        <div class="${color} w-full rounded-t transition-all duration-300" style="height: ${heightPx}px"></div>
                     </div>
                 `;
             }).join('');
