@@ -6,6 +6,6 @@ metadata:
   labels:
     app: minecraft-stats
 data:
-  MINECRAFT_STATS_PATH: "/minecraft-data/world/stats"
+  MINECRAFT_STATS_PATH: "/minecraft-data/server_chavalda/stats"
   MINECRAFT_USER_CACHE_PATH: "/minecraft-data/usercache.json"
   MINECRAFT_SERVER_NAME: "Server De la Chavalada"
