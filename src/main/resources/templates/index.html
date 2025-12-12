@@ -222,6 +222,163 @@
             </div>
         </section>
 
+        <!-- Detailed Server Stats -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-chart-bar text-purple-400 mr-3"></i>
+                Estadísticas Detalladas del Servidor
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Total Damage Dealt -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-sword text-red-400 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-red-400" id="total-damage"
+                       th:text="${#numbers.formatInteger(stats.serverTotals.totalDamageDealt, 1, 'COMMA')}">0</p>
+                    <p class="text-xs text-gray-400">Daño Infligido</p>
+                </div>
+                <!-- Total Distance -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-route text-blue-400 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-blue-400" id="total-distance"
+                       th:text="${#numbers.formatDecimal(stats.serverTotals.totalDistanceTraveled / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</p>
+                    <p class="text-xs text-gray-400">Distancia Total</p>
+                </div>
+                <!-- Chests Opened -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-box-open text-yellow-400 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-yellow-400" id="total-chests"
+                       th:text="${#numbers.formatInteger(stats.serverTotals.totalChestsOpened, 1, 'COMMA')}">0</p>
+                    <p class="text-xs text-gray-400">Cofres Abiertos</p>
+                </div>
+                <!-- Total Blocks -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-cubes text-green-400 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-green-400" id="total-blocks"
+                       th:text="${#numbers.formatInteger(stats.serverTotals.totalBlocksMined, 1, 'COMMA')}">0</p>
+                    <p class="text-xs text-gray-400">Bloques Minados</p>
+                </div>
+                <!-- Total Crafted -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-hammer text-orange-400 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-orange-400" id="total-crafted"
+                       th:text="${#numbers.formatInteger(stats.serverTotals.totalItemsCrafted, 1, 'COMMA')}">0</p>
+                    <p class="text-xs text-gray-400">Items Crafteados</p>
+                </div>
+                <!-- Total Mobs -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-skull text-pink-400 text-2xl mb-2"></i>
+                    <p class="text-2xl font-bold text-pink-400" id="total-mobs"
+                       th:text="${#numbers.formatInteger(stats.serverTotals.totalMobsKilled, 1, 'COMMA')}">0</p>
+                    <p class="text-xs text-gray-400">Mobs Eliminados</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Player Detailed Stats -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-user-chart text-cyan-400 mr-3"></i>
+                Estadísticas por Jugador
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div th:each="player : ${stats.players}" class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <div class="flex items-center mb-4">
+                        <img th:src="'https://mc-heads.net/avatar/' + ${player.name} + '/48'" 
+                             class="w-12 h-12 rounded-lg mr-3" alt="Avatar">
+                        <div>
+                            <h3 class="font-bold text-lg" th:text="${player.name}">Player</h3>
+                            <p class="text-sm text-gray-400" th:text="${player.summary.playTimeFormatted}">0h 0m</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Combat Stats -->
+                    <div class="mb-3" th:if="${player.detailedStats != null}">
+                        <p class="text-xs text-gray-500 uppercase mb-2">⚔️ Combate</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Daño infligido:</span>
+                                <span class="text-red-400" th:text="${#numbers.formatInteger(player.detailedStats.damageDealt, 1, 'COMMA')}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Daño recibido:</span>
+                                <span class="text-orange-400" th:text="${#numbers.formatInteger(player.detailedStats.damageTaken, 1, 'COMMA')}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Bloqueado:</span>
+                                <span class="text-blue-400" th:text="${#numbers.formatInteger(player.detailedStats.damageBlocked, 1, 'COMMA')}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Muertes:</span>
+                                <span class="text-pink-400" th:text="${player.summary.totalDeaths}">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Movement Stats -->
+                    <div class="mb-3" th:if="${player.detailedStats != null}">
+                        <p class="text-xs text-gray-500 uppercase mb-2">🚶 Movimiento</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Caminando:</span>
+                                <span class="text-green-400" th:text="${#numbers.formatDecimal(player.detailedStats.walkDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Sprint:</span>
+                                <span class="text-green-400" th:text="${#numbers.formatDecimal(player.detailedStats.sprintDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Barco:</span>
+                                <span class="text-blue-400" th:text="${#numbers.formatDecimal(player.detailedStats.boatDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Caballo:</span>
+                                <span class="text-yellow-400" th:text="${#numbers.formatDecimal(player.detailedStats.horseDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Nadando:</span>
+                                <span class="text-cyan-400" th:text="${#numbers.formatDecimal(player.detailedStats.swimDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Volando:</span>
+                                <span class="text-purple-400" th:text="${#numbers.formatDecimal(player.detailedStats.flyDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Interaction Stats -->
+                    <div th:if="${player.detailedStats != null}">
+                        <p class="text-xs text-gray-500 uppercase mb-2">🎮 Interacciones</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Cofres:</span>
+                                <span class="text-yellow-400" th:text="${player.detailedStats.chestsOpened}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Crafteos:</span>
+                                <span class="text-orange-400" th:text="${player.detailedStats.craftingTableUses}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Hornos:</span>
+                                <span class="text-red-400" th:text="${player.detailedStats.furnaceUses}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Dormido:</span>
+                                <span class="text-purple-400" th:text="${player.detailedStats.timesSlept}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Comercios:</span>
+                                <span class="text-emerald-400" th:text="${player.detailedStats.villagersTraded}">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Pesca:</span>
+                                <span class="text-blue-400" th:text="${player.detailedStats.fishCaught}">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Live Events Feed -->
         <section class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
