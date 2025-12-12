@@ -111,3 +111,61 @@ data class ServerTotals(
     val totalPlayTimeTicks: Long,
     val totalPlayTimeFormatted: String
 )
+
+// ============== Log & Events Models ==============
+
+enum class LogEntryType {
+    CHAT, JOIN, LEAVE, DEATH, ADVANCEMENT, OTHER
+}
+
+data class LogEntry(
+    val timestamp: String,
+    val type: LogEntryType,
+    val playerName: String?,
+    val message: String,
+    val rawLine: String
+)
+
+// ============== Server Status Models ==============
+
+data class ServerStatus(
+    val online: Boolean,
+    val playerCount: Int,
+    val maxPlayers: Int,
+    val onlinePlayers: List<OnlinePlayer>,
+    val motd: String,
+    val version: String,
+    val lastUpdated: Long
+)
+
+data class OnlinePlayer(
+    val name: String,
+    val uuid: String?,
+    val joinedAt: String?
+)
+
+// ============== Advancements Models ==============
+
+data class PlayerAdvancements(
+    val uuid: String,
+    val advancements: List<Advancement>,
+    val completedCount: Int,
+    val totalCount: Int,
+    val completionPercentage: Int
+)
+
+data class Advancement(
+    val id: String,
+    val name: String,
+    val done: Boolean,
+    val criteriaCount: Int,
+    val completedAt: String?
+)
+
+// ============== WebSocket Messages ==============
+
+data class LiveUpdate(
+    val type: String,
+    val data: Any,
+    val timestamp: Long = System.currentTimeMillis()
+)

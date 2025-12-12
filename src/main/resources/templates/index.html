@@ -5,26 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${serverName} + ' - Estadísticas'">Minecraft Stats</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         .minecraft-font { font-family: 'Courier New', monospace; }
         .card-hover:hover { transform: translateY(-2px); transition: transform 0.2s; }
         .gradient-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+        .live-indicator { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .event-enter { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white">
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
-        <header class="text-center mb-12">
+        <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold minecraft-font mb-4">
                 <i class="fas fa-cube text-green-500 mr-3"></i>
                 <span th:text="${serverName}">Server Stats</span>
             </h1>
-            <p class="text-gray-400">
-                <i class="fas fa-clock mr-2"></i>
-                Última actualización: <span th:text="${stats.lastUpdated}">-</span>
-            </p>
+            <div class="flex justify-center items-center space-x-4 text-gray-400">
+                <span id="connection-status" class="flex items-center">
+                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    Conectando...
+                </span>
+                <span>•</span>
+                <span>
+                    <i class="fas fa-clock mr-1"></i>
+                    <span id="last-update" th:text="${stats.lastUpdated}">-</span>
+                </span>
+            </div>
         </header>
+
+        <!-- Live Status Bar -->
+        <section class="mb-8">
+            <div class="bg-gray-800/70 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div id="server-status" class="flex items-center">
+                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2 live-indicator"></span>
+                        <span class="font-bold">Servidor Online</span>
+                    </div>
+                    <div class="text-gray-400">|</div>
+                    <div id="online-players-count" class="flex items-center">
+                        <i class="fas fa-users text-green-400 mr-2"></i>
+                        <span id="player-count">0</span>/<span id="max-players">10</span> jugadores
+                    </div>
+                </div>
+                <div id="online-players-list" class="flex flex-wrap gap-2">
+                    <!-- Online players will be inserted here -->
+                </div>
+            </div>
+        </section>
 
         <!-- Server Totals -->
         <section class="mb-12">
@@ -180,6 +213,37 @@
             </div>
         </section>
 
+        <!-- Live Events Feed -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-rss text-red-400 mr-3 live-indicator"></i>
+                Eventos en Vivo
+            </h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Recent Events -->
+                <div class="bg-gray-800/50 rounded-lg p-6">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+                        Actividad Reciente
+                    </h3>
+                    <div id="events-feed" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Esperando eventos...</p>
+                    </div>
+                </div>
+                
+                <!-- Chat -->
+                <div class="bg-gray-800/50 rounded-lg p-6">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-comments text-blue-400 mr-2"></i>
+                        Chat del Servidor
+                    </h3>
+                    <div id="chat-feed" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 text-sm">Cargando mensajes...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- All Players -->
         <section>
             <h2 class="text-2xl font-bold mb-6 flex items-center">
@@ -212,8 +276,157 @@
             <p>
                 <i class="fas fa-code mr-2"></i>
                 Minecraft Stats Web - Powered by Spring Boot & Kotlin
+                <span class="mx-2">|</span>
+                <i class="fas fa-plug mr-1"></i>
+                <span id="ws-status">WebSocket: Desconectado</span>
             </p>
         </footer>
     </div>
+
+    <!-- WebSocket JavaScript -->
+    <script>
+        let stompClient = null;
+        
+        function connect() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null; // Disable debug logs
+            
+            stompClient.connect({}, function(frame) {
+                updateConnectionStatus(true);
+                
+                // Subscribe to server status
+                stompClient.subscribe('/topic/status', function(message) {
+                    const update = JSON.parse(message.body);
+                    updateServerStatus(update.data);
+                });
+                
+                // Subscribe to events
+                stompClient.subscribe('/topic/events', function(message) {
+                    const update = JSON.parse(message.body);
+                    addEvent(update.data);
+                });
+                
+                // Subscribe to stats updates
+                stompClient.subscribe('/topic/stats', function(message) {
+                    const update = JSON.parse(message.body);
+                    console.log('Stats update received');
+                });
+                
+                // Load initial data
+                loadInitialData();
+                
+            }, function(error) {
+                updateConnectionStatus(false);
+                setTimeout(connect, 5000); // Reconnect after 5 seconds
+            });
+        }
+        
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connection-status');
+            const wsStatus = document.getElementById('ws-status');
+            if (connected) {
+                statusEl.innerHTML = '<span class="w-3 h-3 bg-green-500 rounded-full mr-2 live-indicator"></span>En vivo';
+                wsStatus.textContent = 'WebSocket: Conectado';
+            } else {
+                statusEl.innerHTML = '<span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>Desconectado';
+                wsStatus.textContent = 'WebSocket: Desconectado';
+            }
+        }
+        
+        function updateServerStatus(status) {
+            document.getElementById('player-count').textContent = status.playerCount;
+            document.getElementById('max-players').textContent = status.maxPlayers;
+            
+            const playersList = document.getElementById('online-players-list');
+            playersList.innerHTML = status.onlinePlayers.map(p => 
+                `<span class="bg-green-600/30 text-green-300 px-3 py-1 rounded-full text-sm">
+                    <i class="fas fa-circle text-green-400 text-xs mr-1"></i>${p.name}
+                </span>`
+            ).join('');
+            
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        }
+        
+        function addEvent(event) {
+            const feed = document.getElementById('events-feed');
+            const firstChild = feed.firstElementChild;
+            if (firstChild && firstChild.textContent.includes('Esperando')) {
+                feed.innerHTML = '';
+            }
+            
+            let icon, color;
+            switch(event.type) {
+                case 'JOIN': icon = 'sign-in-alt'; color = 'green'; break;
+                case 'LEAVE': icon = 'sign-out-alt'; color = 'red'; break;
+                case 'DEATH': icon = 'skull'; color = 'pink'; break;
+                case 'ADVANCEMENT': icon = 'trophy'; color = 'yellow'; break;
+                case 'CHAT': icon = 'comment'; color = 'blue'; break;
+                default: icon = 'info-circle'; color = 'gray';
+            }
+            
+            const eventHtml = `
+                <div class="flex items-start space-x-2 py-1 event-enter">
+                    <span class="text-${color}-400"><i class="fas fa-${icon}"></i></span>
+                    <span class="text-gray-400 text-xs">${event.timestamp}</span>
+                    <span class="text-sm">${event.message}</span>
+                </div>
+            `;
+            
+            feed.insertAdjacentHTML('afterbegin', eventHtml);
+            
+            // Keep only last 20 events
+            while (feed.children.length > 20) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+        
+        function addChatMessage(event) {
+            const feed = document.getElementById('chat-feed');
+            const firstChild = feed.firstElementChild;
+            if (firstChild && firstChild.textContent.includes('Cargando')) {
+                feed.innerHTML = '';
+            }
+            
+            const chatHtml = `
+                <div class="py-1 event-enter">
+                    <span class="text-gray-400 text-xs">${event.timestamp}</span>
+                    <span class="text-green-400 font-bold">&lt;${event.playerName}&gt;</span>
+                    <span class="text-sm">${event.message}</span>
+                </div>
+            `;
+            
+            feed.insertAdjacentHTML('afterbegin', chatHtml);
+            
+            while (feed.children.length > 30) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+        
+        async function loadInitialData() {
+            try {
+                // Load server status
+                const statusRes = await fetch('/api/status');
+                const status = await statusRes.json();
+                updateServerStatus(status);
+                
+                // Load recent events
+                const eventsRes = await fetch('/api/events?limit=20');
+                const events = await eventsRes.json();
+                events.reverse().forEach(addEvent);
+                
+                // Load recent chat
+                const chatRes = await fetch('/api/chat?limit=20');
+                const chat = await chatRes.json();
+                chat.reverse().forEach(addChatMessage);
+                
+            } catch (e) {
+                console.error('Error loading initial data:', e);
+            }
+        }
+        
+        // Connect on page load
+        connect();
+    </script>
 </body>
 </html>

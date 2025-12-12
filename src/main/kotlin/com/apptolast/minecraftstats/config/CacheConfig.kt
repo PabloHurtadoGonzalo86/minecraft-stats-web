@@ -14,7 +14,7 @@ class CacheConfig {
 
     @Bean
     fun cacheManager(): CacheManager {
-        val cacheManager = CaffeineCacheManager("stats", "players", "serverStats")
+        val cacheManager = CaffeineCacheManager("stats", "players", "serverStats", "advancements")
         cacheManager.setCaffeine(
             Caffeine.newBuilder()
                 .expireAfterWrite(5, TimeUnit.MINUTES)
