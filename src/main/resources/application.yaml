@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: minecraft-stats-web
+  cache:
+    type: caffeine
+
+server:
+  port: 8080
+
+minecraft:
+  stats-path: ${MINECRAFT_STATS_PATH:/data/world/stats}
+  user-cache-path: ${MINECRAFT_USER_CACHE_PATH:/data/usercache.json}
+  server-name: ${MINECRAFT_SERVER_NAME:Server De la Chavalada}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.apptolast: INFO

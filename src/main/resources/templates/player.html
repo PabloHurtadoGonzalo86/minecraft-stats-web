@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${player?.name} + ' - ' + ${serverName}">Player Stats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .minecraft-font { font-family: 'Courier New', monospace; }
+        .card-hover:hover { transform: translateY(-2px); transition: transform 0.2s; }
+        .gradient-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Back Link -->
+        <a href="/" class="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Volver al inicio
+        </a>
+
+        <!-- Player Not Found -->
+        <div th:if="${player == null}" class="text-center py-20">
+            <i class="fas fa-user-slash text-6xl text-gray-500 mb-4"></i>
+            <h1 class="text-2xl font-bold mb-2">Jugador no encontrado</h1>
+            <p class="text-gray-400">El jugador que buscas no existe o no tiene estadísticas.</p>
+            <a href="/" class="mt-4 inline-block bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg transition-colors">
+                Volver al inicio
+            </a>
+        </div>
+
+        <!-- Player Stats -->
+        <div th:if="${player != null}">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row items-center mb-12 space-y-4 md:space-y-0 md:space-x-6">
+                <img th:src="'https://mc-heads.net/body/' + ${player.uuid} + '/150'" 
+                     alt="Player Body" class="w-32">
+                <div class="text-center md:text-left">
+                    <h1 class="text-4xl font-bold minecraft-font" th:text="${player.name}">Player</h1>
+                    <p class="text-gray-400 text-sm font-mono" th:text="${player.uuid}">UUID</p>
+                </div>
+            </header>
+
+            <!-- Summary Stats -->
+            <section class="mb-12">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-chart-bar text-blue-400 mr-3"></i>
+                    Resumen
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-clock text-3xl text-purple-400 mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${player.summary.playTimeFormatted}">0h</p>
+                        <p class="text-gray-400 text-sm">Tiempo Jugado</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-cubes text-3xl text-yellow-400 mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(player.summary.totalBlocksMined, 1, 'COMMA')}">0</p>
+                        <p class="text-gray-400 text-sm">Bloques Minados</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-hammer text-3xl text-orange-400 mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(player.summary.totalItemsCrafted, 1, 'COMMA')}">0</p>
+                        <p class="text-gray-400 text-sm">Items Crafteados</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-skull text-3xl text-red-400 mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(player.summary.totalMobsKilled, 1, 'COMMA')}">0</p>
+                        <p class="text-gray-400 text-sm">Mobs Eliminados</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-heart-crack text-3xl text-pink-400 mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${player.summary.totalDeaths}">0</p>
+                        <p class="text-gray-400 text-sm">Muertes</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-person-walking text-3xl text-blue-400 mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${player.summary.distanceWalkedFormatted}">0 km</p>
+                        <p class="text-gray-400 text-sm">Distancia Recorrida</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-arrow-up text-3xl text-green-400 mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(player.summary.jumps, 1, 'COMMA')}">0</p>
+                        <p class="text-gray-400 text-sm">Saltos</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Top Blocks Mined -->
+            <section class="mb-12" th:if="${not #maps.isEmpty(player.stats.mined)}">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-pickaxe text-yellow-400 mr-3"></i>
+                    Top Bloques Minados
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <div th:each="entry : ${#maps.entrySet(player.stats.mined)}" 
+                         th:with="sortedEntries=${#lists.sort(#maps.entrySet(player.stats.mined), __${'new java.util.Comparator() { public int compare(Object a, Object b) { return Long.compare(((java.util.Map$Entry)b).getValue(), ((java.util.Map$Entry)a).getValue()); } }'}__)}"
+                         class="hidden">
+                    </div>
+                    <th:block th:with="entries=${player.stats.mined.entrySet()}">
+                        <div th:each="entry, iter : ${entries}" th:if="${iter.index < 12}"
+                             class="bg-gray-800/50 rounded-lg p-3 text-center card-hover">
+                            <p class="text-lg font-bold text-yellow-400" th:text="${#numbers.formatInteger(entry.value, 1, 'COMMA')}">0</p>
+                            <p class="text-xs text-gray-400 truncate" 
+                               th:text="${#strings.replace(#strings.replace(entry.key, 'minecraft:', ''), '_', ' ')}">Block</p>
+                        </div>
+                    </th:block>
+                </div>
+            </section>
+
+            <!-- Top Mobs Killed -->
+            <section class="mb-12" th:if="${not #maps.isEmpty(player.stats.killed)}">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-skull-crossbones text-red-400 mr-3"></i>
+                    Mobs Eliminados
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <th:block th:with="entries=${player.stats.killed.entrySet()}">
+                        <div th:each="entry, iter : ${entries}" th:if="${iter.index < 12}"
+                             class="bg-gray-800/50 rounded-lg p-3 text-center card-hover">
+                            <p class="text-lg font-bold text-red-400" th:text="${entry.value}">0</p>
+                            <p class="text-xs text-gray-400 truncate" 
+                               th:text="${#strings.replace(#strings.replace(entry.key, 'minecraft:', ''), '_', ' ')}">Mob</p>
+                        </div>
+                    </th:block>
+                </div>
+            </section>
+
+            <!-- Items Used -->
+            <section class="mb-12" th:if="${not #maps.isEmpty(player.stats.used)}">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-hand text-orange-400 mr-3"></i>
+                    Items Más Usados
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <th:block th:with="entries=${player.stats.used.entrySet()}">
+                        <div th:each="entry, iter : ${entries}" th:if="${iter.index < 12}"
+                             class="bg-gray-800/50 rounded-lg p-3 text-center card-hover">
+                            <p class="text-lg font-bold text-orange-400" th:text="${#numbers.formatInteger(entry.value, 1, 'COMMA')}">0</p>
+                            <p class="text-xs text-gray-400 truncate" 
+                               th:text="${#strings.replace(#strings.replace(entry.key, 'minecraft:', ''), '_', ' ')}">Item</p>
+                        </div>
+                    </th:block>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>
+                <i class="fas fa-code mr-2"></i>
+                Minecraft Stats Web - Powered by Spring Boot & Kotlin
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${serverName} + ' - Estadísticas'">Minecraft Stats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .minecraft-font { font-family: 'Courier New', monospace; }
+        .card-hover:hover { transform: translateY(-2px); transition: transform 0.2s; }
+        .gradient-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold minecraft-font mb-4">
+                <i class="fas fa-cube text-green-500 mr-3"></i>
+                <span th:text="${serverName}">Server Stats</span>
+            </h1>
+            <p class="text-gray-400">
+                <i class="fas fa-clock mr-2"></i>
+                Última actualización: <span th:text="${stats.lastUpdated}">-</span>
+            </p>
+        </header>
+
+        <!-- Server Totals -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-server text-blue-400 mr-3"></i>
+                Totales del Servidor
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-users text-3xl text-green-400 mb-2"></i>
+                    <p class="text-2xl font-bold" th:text="${stats.totalPlayers}">0</p>
+                    <p class="text-gray-400 text-sm">Jugadores</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-cubes text-3xl text-yellow-400 mb-2"></i>
+                    <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(stats.serverTotals.totalBlocksMined, 1, 'COMMA')}">0</p>
+                    <p class="text-gray-400 text-sm">Bloques Minados</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-hammer text-3xl text-orange-400 mb-2"></i>
+                    <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(stats.serverTotals.totalItemsCrafted, 1, 'COMMA')}">0</p>
+                    <p class="text-gray-400 text-sm">Items Crafteados</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-skull text-3xl text-red-400 mb-2"></i>
+                    <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(stats.serverTotals.totalMobsKilled, 1, 'COMMA')}">0</p>
+                    <p class="text-gray-400 text-sm">Mobs Eliminados</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-heart-crack text-3xl text-pink-400 mb-2"></i>
+                    <p class="text-2xl font-bold" th:text="${stats.serverTotals.totalDeaths}">0</p>
+                    <p class="text-gray-400 text-sm">Muertes Totales</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-hourglass-half text-3xl text-purple-400 mb-2"></i>
+                    <p class="text-2xl font-bold" th:text="${stats.serverTotals.totalPlayTimeFormatted}">0h</p>
+                    <p class="text-gray-400 text-sm">Tiempo Jugado</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Leaderboards -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-trophy text-yellow-400 mr-3"></i>
+                Leaderboards
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Most Blocks Mined -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-pickaxe text-yellow-400 mr-2"></i>
+                        Más Bloques Minados
+                    </h3>
+                    <ul class="space-y-2">
+                        <li th:each="entry, stat : ${stats.leaderboards.mostBlocksMined}" 
+                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                            <span class="flex items-center">
+                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
+                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
+                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
+                                   class="ml-2 hover:text-green-400 transition-colors"
+                                   th:text="${entry.playerName}">Player</a>
+                            </span>
+                            <span class="text-green-400 font-mono" th:text="${#numbers.formatInteger(entry.value, 1, 'COMMA')}">0</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Most Mobs Killed -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-skull-crossbones text-red-400 mr-2"></i>
+                        Más Mobs Eliminados
+                    </h3>
+                    <ul class="space-y-2">
+                        <li th:each="entry : ${stats.leaderboards.mostMobsKilled}" 
+                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                            <span class="flex items-center">
+                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
+                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
+                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
+                                   class="ml-2 hover:text-green-400 transition-colors"
+                                   th:text="${entry.playerName}">Player</a>
+                            </span>
+                            <span class="text-red-400 font-mono" th:text="${#numbers.formatInteger(entry.value, 1, 'COMMA')}">0</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Most Play Time -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-clock text-purple-400 mr-2"></i>
+                        Más Tiempo Jugado
+                    </h3>
+                    <ul class="space-y-2">
+                        <li th:each="entry : ${stats.leaderboards.mostPlayTime}" 
+                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                            <span class="flex items-center">
+                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
+                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
+                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
+                                   class="ml-2 hover:text-green-400 transition-colors"
+                                   th:text="${entry.playerName}">Player</a>
+                            </span>
+                            <span class="text-purple-400 font-mono" th:text="${entry.formattedValue}">0h</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Most Deaths -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-heart-crack text-pink-400 mr-2"></i>
+                        Más Muertes
+                    </h3>
+                    <ul class="space-y-2">
+                        <li th:each="entry : ${stats.leaderboards.mostDeaths}" 
+                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                            <span class="flex items-center">
+                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
+                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
+                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
+                                   class="ml-2 hover:text-green-400 transition-colors"
+                                   th:text="${entry.playerName}">Player</a>
+                            </span>
+                            <span class="text-pink-400 font-mono" th:text="${entry.value}">0</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Most Distance Walked -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-person-walking text-blue-400 mr-2"></i>
+                        Más Distancia Recorrida
+                    </h3>
+                    <ul class="space-y-2">
+                        <li th:each="entry : ${stats.leaderboards.mostDistanceWalked}" 
+                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                            <span class="flex items-center">
+                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
+                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
+                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
+                                   class="ml-2 hover:text-green-400 transition-colors"
+                                   th:text="${entry.playerName}">Player</a>
+                            </span>
+                            <span class="text-blue-400 font-mono" th:text="${entry.formattedValue}">0 km</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- All Players -->
+        <section>
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-users text-green-400 mr-3"></i>
+                Todos los Jugadores
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <a th:each="player : ${stats.players}" 
+                   th:href="@{/player/{uuid}(uuid=${player.uuid})}"
+                   class="bg-gray-800/50 rounded-lg p-4 card-hover flex items-center space-x-4 hover:bg-gray-700/50 transition-colors">
+                    <img th:src="'https://mc-heads.net/avatar/' + ${player.uuid} + '/64'" 
+                         alt="Player Head" class="w-12 h-12 rounded">
+                    <div class="flex-1">
+                        <h3 class="font-bold" th:text="${player.name}">Player</h3>
+                        <p class="text-sm text-gray-400">
+                            <i class="fas fa-clock mr-1"></i>
+                            <span th:text="${player.summary.playTimeFormatted}">0h</span>
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-cubes mr-1"></i>
+                            <span th:text="${#numbers.formatInteger(player.summary.totalBlocksMined, 1, 'COMMA')}">0</span> bloques
+                        </p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-500"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>
+                <i class="fas fa-code mr-2"></i>
+                Minecraft Stats Web - Powered by Spring Boot & Kotlin
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
