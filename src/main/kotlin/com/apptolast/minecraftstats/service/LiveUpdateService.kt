@@ -60,9 +60,9 @@ class LiveUpdateService(
     }
     
     /**
-     * Broadcast server time every 5 seconds for real-time clock
+     * Broadcast server time every 1 second for real-time clock
      */
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 1000)
     fun broadcastServerTime() {
         try {
             val update = createLiveUpdate("SERVER_TIME", createServerTime())
