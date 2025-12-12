@@ -16,6 +16,12 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .event-enter { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        /* Custom scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .custom-scroll { scrollbar-width: thin; scrollbar-color: #4b5563 transparent; }
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white">
@@ -403,7 +409,7 @@
                         <i class="fas fa-pickaxe text-gray-400 mr-2"></i>
                         ⛏️ Bloques Más Minados
                     </h3>
-                    <div id="top-mined" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="top-mined" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                 </div>
@@ -414,7 +420,7 @@
                         <i class="fas fa-hand-pointer text-blue-400 mr-2"></i>
                         🖱️ Items Más Usados
                     </h3>
-                    <div id="top-used" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="top-used" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                 </div>
@@ -425,7 +431,7 @@
                         <i class="fas fa-hammer text-orange-400 mr-2"></i>
                         🔨 Items Más Crafteados
                     </h3>
-                    <div id="top-crafted" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="top-crafted" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                 </div>
@@ -436,7 +442,7 @@
                         <i class="fas fa-skull text-red-400 mr-2"></i>
                         💀 Mobs Más Eliminados
                     </h3>
-                    <div id="top-killed" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="top-killed" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                 </div>
@@ -447,7 +453,7 @@
                         <i class="fas fa-skull-crossbones text-pink-400 mr-2"></i>
                         ☠️ Muertes por Mob
                     </h3>
-                    <div id="top-killed-by" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="top-killed-by" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                 </div>
@@ -458,7 +464,7 @@
                         <i class="fas fa-hand-holding text-green-400 mr-2"></i>
                         🤲 Items Más Recogidos
                     </h3>
-                    <div id="top-picked-up" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="top-picked-up" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                 </div>
@@ -547,7 +553,7 @@
                 <!-- Recent Sessions List -->
                 <div class="bg-gray-800/50 rounded-lg p-6">
                     <h3 class="text-lg font-bold mb-4">🚪 Últimas Sesiones</h3>
-                    <div id="recent-sessions" class="space-y-2 max-h-48 overflow-y-auto">
+                    <div id="recent-sessions" class="space-y-2 max-h-48 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                 </div>
@@ -567,7 +573,7 @@
                         <i class="fas fa-bolt text-yellow-400 mr-2"></i>
                         Actividad Reciente
                     </h3>
-                    <div id="events-feed" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="events-feed" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Esperando eventos...</p>
                     </div>
                 </div>
@@ -578,7 +584,7 @@
                         <i class="fas fa-comments text-blue-400 mr-2"></i>
                         Chat del Servidor
                     </h3>
-                    <div id="chat-feed" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div id="chat-feed" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando mensajes...</p>
                     </div>
                 </div>
