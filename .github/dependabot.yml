@@ -19,6 +19,12 @@ updates:
       - "gradle"
     commit-message:
       prefix: "deps"
+    # Ignore non-stable versions
+    ignore:
+      - dependency-name: "org.springframework.boot"
+        versions: ["4.x", ">= 4.0.0"]
+      - dependency-name: "org.jetbrains.kotlin*"
+        versions: [">= 2.2.0"]
     groups:
       spring-boot:
         patterns:
@@ -52,7 +58,7 @@ updates:
     commit-message:
       prefix: "ci"
 
-  # Docker
+  # Docker - Only use LTS Java versions
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -68,3 +74,7 @@ updates:
       - "docker"
     commit-message:
       prefix: "docker"
+    ignore:
+      # Ignore non-LTS Java versions (only use 17, 21, etc.)
+      - dependency-name: "eclipse-temurin"
+        versions: ["22", "23", "24", "25", "22-*", "23-*", "24-*", "25-*"]
