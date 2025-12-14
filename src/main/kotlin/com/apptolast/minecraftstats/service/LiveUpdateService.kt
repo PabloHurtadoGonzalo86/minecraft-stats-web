@@ -79,24 +79,23 @@ class LiveUpdateService(
     }
     
     /**
-     * Broadcast server status every 30 seconds
+     * Broadcast server status every 1 second (real-time)
      */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 1000)
     fun broadcastServerStatus() {
         try {
             val status = serverStatusService.getServerStatus()
             val update = createLiveUpdate("SERVER_STATUS", status)
             messagingTemplate.convertAndSend("/topic/status", update)
-            logger.debug("Broadcasted server status: ${status.playerCount} players online")
         } catch (e: Exception) {
             logger.error("Error broadcasting server status: ${e.message}")
         }
     }
     
     /**
-     * Broadcast player play times every 30 seconds (for real-time counters)
+     * Broadcast player play times every 1 second (real-time counters)
      */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 1000)
     fun broadcastPlayerTimes() {
         try {
             val stats = statsService.getServerStats()
@@ -154,9 +153,9 @@ class LiveUpdateService(
     }
     
     /**
-     * Broadcast item stats every 30 seconds
+     * Broadcast item stats every 1 second (real-time)
      */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 1000)
     fun broadcastItemStats() {
         try {
             val items = mapOf(
@@ -176,9 +175,9 @@ class LiveUpdateService(
     }
     
     /**
-     * Broadcast stats update every 30 seconds (was 2 minutes)
+     * Broadcast stats update every 1 second (real-time)
      */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 1000)
     fun broadcastStatsUpdate() {
         try {
             val stats = statsService.getServerStats()

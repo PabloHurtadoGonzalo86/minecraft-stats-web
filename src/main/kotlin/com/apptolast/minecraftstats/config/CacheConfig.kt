@@ -26,7 +26,7 @@ class CacheConfig {
         )
         cacheManager.setCaffeine(
             Caffeine.newBuilder()
-                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .expireAfterWrite(1, TimeUnit.SECONDS) // Real-time updates every 1 second
                 .maximumSize(100)
         )
         return cacheManager
