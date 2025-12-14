@@ -87,6 +87,186 @@
                 </div>
             </section>
 
+            <!-- Detailed Combat Stats -->
+            <section class="mb-12" th:if="${player.detailedStats != null}">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-sword text-red-400 mr-3"></i>
+                    ⚔️ Estadísticas de Combate
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-crosshairs text-red-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-red-400" th:text="${#numbers.formatInteger(player.detailedStats.damageDealt, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Daño Infligido</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-heart-crack text-orange-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-orange-400" th:text="${#numbers.formatInteger(player.detailedStats.damageTaken, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Daño Recibido</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-shield-halved text-blue-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-blue-400" th:text="${#numbers.formatInteger(player.detailedStats.damageBlocked, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Daño Bloqueado</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-user-slash text-purple-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-purple-400" th:text="${player.detailedStats.playerKills}">0</p>
+                        <p class="text-xs text-gray-400">Jugadores Eliminados</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-bullseye text-yellow-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-yellow-400" th:text="${player.detailedStats.targetsHit}">0</p>
+                        <p class="text-xs text-gray-400">Objetivos Impactados</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-trophy text-amber-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-amber-400" th:text="${player.detailedStats.raidWins}">0</p>
+                        <p class="text-xs text-gray-400">Raids Ganados</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detailed Movement Stats -->
+            <section class="mb-12" th:if="${player.detailedStats != null}">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-person-walking text-blue-400 mr-3"></i>
+                    🚶 Estadísticas de Movimiento
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-shoe-prints text-green-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-green-400" th:text="${#numbers.formatDecimal(player.detailedStats.walkDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Caminando</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-running text-lime-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-lime-400" th:text="${#numbers.formatDecimal(player.detailedStats.sprintDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Corriendo</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-water text-cyan-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-cyan-400" th:text="${#numbers.formatDecimal(player.detailedStats.swimDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Nadando</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-sailboat text-blue-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-blue-400" th:text="${#numbers.formatDecimal(player.detailedStats.boatDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">En Barco</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-horse text-yellow-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-yellow-400" th:text="${#numbers.formatDecimal(player.detailedStats.horseDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">A Caballo</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-feather text-purple-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-purple-400" th:text="${#numbers.formatDecimal(player.detailedStats.elytraDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Con Elytra</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-plane text-indigo-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-indigo-400" th:text="${#numbers.formatDecimal(player.detailedStats.flyDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Volando</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-mountain text-gray-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-gray-400" th:text="${#numbers.formatDecimal(player.detailedStats.climbDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Escalando</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-user-ninja text-pink-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-pink-400" th:text="${#numbers.formatDecimal(player.detailedStats.crouchDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Agachado</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-arrow-down text-red-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-red-400" th:text="${#numbers.formatDecimal(player.detailedStats.fallDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">Cayendo</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-fire text-orange-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-orange-400" th:text="${#numbers.formatDecimal(player.detailedStats.striderDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">En Strider</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-pig text-pink-300 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-pink-300" th:text="${#numbers.formatDecimal(player.detailedStats.pigDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0</p>
+                        <p class="text-xs text-gray-400">En Cerdo</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detailed Interaction Stats -->
+            <section class="mb-12" th:if="${player.detailedStats != null}">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-hand-pointer text-orange-400 mr-3"></i>
+                    🎮 Interacciones
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-box-open text-yellow-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-yellow-400" th:text="${#numbers.formatInteger(player.detailedStats.chestsOpened, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Cofres Abiertos</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-th text-orange-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-orange-400" th:text="${#numbers.formatInteger(player.detailedStats.craftingTableUses, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Mesa de Crafteo</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-fire text-red-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-red-400" th:text="${#numbers.formatInteger(player.detailedStats.furnaceUses, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Hornos</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-hammer text-gray-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-gray-400" th:text="${#numbers.formatInteger(player.detailedStats.anvilUses, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Yunques</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-book text-purple-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-purple-400" th:text="${#numbers.formatInteger(player.detailedStats.enchantingTableUses, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Encantamientos</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-flask text-blue-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-blue-400" th:text="${#numbers.formatInteger(player.detailedStats.brewingStandUses, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Alambique</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-handshake text-emerald-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-emerald-400" th:text="${#numbers.formatInteger(player.detailedStats.villagersTraded, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Comercios</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-fish text-cyan-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-cyan-400" th:text="${#numbers.formatInteger(player.detailedStats.fishCaught, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Peces Pescados</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-heart text-pink-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-pink-400" th:text="${#numbers.formatInteger(player.detailedStats.animalsBreed, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Animales Criados</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-bed text-indigo-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-indigo-400" th:text="${#numbers.formatInteger(player.detailedStats.timesSlept, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Veces Dormido</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-bell text-amber-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-amber-400" th:text="${#numbers.formatInteger(player.detailedStats.bellsRung, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Campanas Tocadas</p>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                        <i class="fas fa-record-vinyl text-rose-400 text-2xl mb-2"></i>
+                        <p class="text-xl font-bold text-rose-400" th:text="${#numbers.formatInteger(player.detailedStats.recordsPlayed, 1, 'COMMA')}">0</p>
+                        <p class="text-xs text-gray-400">Discos Reproducidos</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- Top Blocks Mined -->
             <section class="mb-12" th:if="${not #maps.isEmpty(player.stats.mined)}">
                 <h2 class="text-2xl font-bold mb-6 flex items-center">

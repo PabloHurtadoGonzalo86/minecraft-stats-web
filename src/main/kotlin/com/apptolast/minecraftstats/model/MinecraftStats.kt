@@ -154,7 +154,13 @@ data class Leaderboards(
     val mostMobsKilled: List<LeaderboardEntry>,
     val mostPlayTime: List<LeaderboardEntry>,
     val mostDeaths: List<LeaderboardEntry>,
-    val mostDistanceWalked: List<LeaderboardEntry>
+    val mostDistanceWalked: List<LeaderboardEntry>,
+    // New leaderboards
+    val mostItemsCrafted: List<LeaderboardEntry> = emptyList(),
+    val mostDamageDealt: List<LeaderboardEntry> = emptyList(),
+    val mostJumps: List<LeaderboardEntry> = emptyList(),
+    val mostFishCaught: List<LeaderboardEntry> = emptyList(),
+    val mostVillagerTrades: List<LeaderboardEntry> = emptyList()
 )
 
 data class LeaderboardEntry(
@@ -175,7 +181,13 @@ data class ServerTotals(
     // Additional server totals
     val totalDamageDealt: Long = 0,
     val totalDistanceTraveled: Long = 0,
-    val totalChestsOpened: Long = 0
+    val totalChestsOpened: Long = 0,
+    // New totals
+    val totalJumps: Long = 0,
+    val totalFishCaught: Long = 0,
+    val totalAnimalsBred: Long = 0,
+    val totalVillagerTrades: Long = 0,
+    val totalTimesSlept: Long = 0
 )
 
 // ============== Log & Events Models ==============

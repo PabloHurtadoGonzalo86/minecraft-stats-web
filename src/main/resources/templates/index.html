@@ -16,6 +16,8 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .event-enter { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .stat-update { animation: statPulse 0.5s ease-out; }
+        @keyframes statPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); color: #22c55e; } 100% { transform: scale(1); } }
         /* Custom scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -30,7 +32,7 @@
         <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold minecraft-font mb-4">
                 <i class="fas fa-cube text-green-500 mr-3"></i>
-                <span th:text="${serverName}">Server Stats</span>
+                <span id="server-name" th:text="${serverName}">Server Stats</span>
             </h1>
             <div class="flex justify-center items-center flex-wrap gap-4 text-gray-400">
                 <span id="connection-status" class="flex items-center">
@@ -49,7 +51,7 @@
                 </span>
                 <span>•</span>
                 <span class="text-xs">
-                    Actualizado: <span id="last-update" th:text="${stats.lastUpdated}">-</span>
+                    Actualizado: <span id="last-update">-</span>
                 </span>
             </div>
         </header>
@@ -59,86 +61,78 @@
             <div class="bg-gray-800/70 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center space-x-4">
                     <div id="server-status" class="flex items-center">
-                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2 live-indicator"></span>
-                        <span class="font-bold">Servidor Online</span>
+                        <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                        <span class="font-bold">Conectando...</span>
                     </div>
                     <div class="text-gray-400">|</div>
                     <div id="online-players-count" class="flex items-center">
                         <i class="fas fa-users text-green-400 mr-2"></i>
-                        <span id="player-count">0</span>/<span id="max-players">10</span> jugadores
+                        <span id="player-count">-</span>/<span id="max-players">-</span> jugadores
                     </div>
                 </div>
                 <div id="online-players-list" class="flex flex-wrap gap-2">
-                    <!-- Online players will be inserted here -->
+                    <span class="text-gray-500 text-sm">Cargando...</span>
                 </div>
             </div>
         </section>
 
-        <!-- Server Totals -->
+        <!-- Server Totals - 100% Dynamic -->
         <section class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <i class="fas fa-server text-blue-400 mr-3"></i>
                 Totales del Servidor
+                <span class="ml-3 text-xs text-green-400 live-indicator">● EN VIVO</span>
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-users text-3xl text-green-400 mb-2"></i>
-                    <p class="text-2xl font-bold" th:text="${stats.totalPlayers}">0</p>
+                    <p class="text-2xl font-bold" id="stat-total-players">-</p>
                     <p class="text-gray-400 text-sm">Jugadores</p>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-cubes text-3xl text-yellow-400 mb-2"></i>
-                    <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(stats.serverTotals.totalBlocksMined, 1, 'COMMA')}">0</p>
+                    <p class="text-2xl font-bold" id="stat-total-blocks">-</p>
                     <p class="text-gray-400 text-sm">Bloques Minados</p>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-hammer text-3xl text-orange-400 mb-2"></i>
-                    <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(stats.serverTotals.totalItemsCrafted, 1, 'COMMA')}">0</p>
+                    <p class="text-2xl font-bold" id="stat-total-crafted">-</p>
                     <p class="text-gray-400 text-sm">Items Crafteados</p>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-skull text-3xl text-red-400 mb-2"></i>
-                    <p class="text-2xl font-bold" th:text="${#numbers.formatInteger(stats.serverTotals.totalMobsKilled, 1, 'COMMA')}">0</p>
+                    <p class="text-2xl font-bold" id="stat-total-mobs">-</p>
                     <p class="text-gray-400 text-sm">Mobs Eliminados</p>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-heart-crack text-3xl text-pink-400 mb-2"></i>
-                    <p class="text-2xl font-bold" th:text="${stats.serverTotals.totalDeaths}">0</p>
+                    <p class="text-2xl font-bold" id="stat-total-deaths">-</p>
                     <p class="text-gray-400 text-sm">Muertes Totales</p>
                 </div>
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-hourglass-half text-3xl text-purple-400 mb-2"></i>
-                    <p class="text-2xl font-bold" th:text="${stats.serverTotals.totalPlayTimeFormatted}">0h</p>
+                    <p class="text-2xl font-bold" id="stat-total-playtime">-</p>
                     <p class="text-gray-400 text-sm">Tiempo Jugado</p>
                 </div>
             </div>
         </section>
 
-        <!-- Leaderboards -->
+        <!-- Leaderboards - 100% Dynamic -->
         <section class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <i class="fas fa-trophy text-yellow-400 mr-3"></i>
                 Leaderboards
+                <span class="ml-3 text-xs text-green-400 live-indicator">● EN VIVO</span>
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 <!-- Most Blocks Mined -->
                 <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
-                        <i class="fas fa-pickaxe text-yellow-400 mr-2"></i>
-                        Más Bloques Minados
+                        <i class="fas fa-gem text-yellow-400 mr-2"></i>
+                        ⛏️ Más Bloques Minados
                     </h3>
-                    <ul class="space-y-2">
-                        <li th:each="entry, stat : ${stats.leaderboards.mostBlocksMined}" 
-                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                            <span class="flex items-center">
-                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
-                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
-                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
-                                   class="ml-2 hover:text-green-400 transition-colors"
-                                   th:text="${entry.playerName}">Player</a>
-                            </span>
-                            <span class="text-green-400 font-mono" th:text="${#numbers.formatInteger(entry.value, 1, 'COMMA')}">0</span>
-                        </li>
+                    <ul id="lb-blocks" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
                     </ul>
                 </div>
 
@@ -146,20 +140,10 @@
                 <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
                         <i class="fas fa-skull-crossbones text-red-400 mr-2"></i>
-                        Más Mobs Eliminados
+                        ⚔️ Más Mobs Eliminados
                     </h3>
-                    <ul class="space-y-2">
-                        <li th:each="entry : ${stats.leaderboards.mostMobsKilled}" 
-                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                            <span class="flex items-center">
-                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
-                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
-                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
-                                   class="ml-2 hover:text-green-400 transition-colors"
-                                   th:text="${entry.playerName}">Player</a>
-                            </span>
-                            <span class="text-red-400 font-mono" th:text="${#numbers.formatInteger(entry.value, 1, 'COMMA')}">0</span>
-                        </li>
+                    <ul id="lb-mobs" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
                     </ul>
                 </div>
 
@@ -167,20 +151,10 @@
                 <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
                         <i class="fas fa-clock text-purple-400 mr-2"></i>
-                        Más Tiempo Jugado
+                        ⏱️ Más Tiempo Jugado
                     </h3>
-                    <ul class="space-y-2">
-                        <li th:each="entry : ${stats.leaderboards.mostPlayTime}" 
-                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                            <span class="flex items-center">
-                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
-                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
-                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
-                                   class="ml-2 hover:text-green-400 transition-colors"
-                                   th:text="${entry.playerName}">Player</a>
-                            </span>
-                            <span class="text-purple-400 font-mono" th:text="${entry.formattedValue}">0h</span>
-                        </li>
+                    <ul id="lb-playtime" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
                     </ul>
                 </div>
 
@@ -188,20 +162,10 @@
                 <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
                         <i class="fas fa-heart-crack text-pink-400 mr-2"></i>
-                        Más Muertes
+                        💀 Más Muertes
                     </h3>
-                    <ul class="space-y-2">
-                        <li th:each="entry : ${stats.leaderboards.mostDeaths}" 
-                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                            <span class="flex items-center">
-                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
-                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
-                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
-                                   class="ml-2 hover:text-green-400 transition-colors"
-                                   th:text="${entry.playerName}">Player</a>
-                            </span>
-                            <span class="text-pink-400 font-mono" th:text="${entry.value}">0</span>
-                        </li>
+                    <ul id="lb-deaths" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
                     </ul>
                 </div>
 
@@ -209,178 +173,139 @@
                 <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
                         <i class="fas fa-person-walking text-blue-400 mr-2"></i>
-                        Más Distancia Recorrida
+                        🚶 Más Distancia
                     </h3>
-                    <ul class="space-y-2">
-                        <li th:each="entry : ${stats.leaderboards.mostDistanceWalked}" 
-                            class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                            <span class="flex items-center">
-                                <span th:class="${entry.rank == 1 ? 'text-yellow-400' : (entry.rank == 2 ? 'text-gray-400' : (entry.rank == 3 ? 'text-orange-600' : 'text-gray-500'))}"
-                                      class="w-6 font-bold" th:text="'#' + ${entry.rank}">#1</span>
-                                <a th:href="@{/player/{uuid}(uuid=${entry.playerUuid})}" 
-                                   class="ml-2 hover:text-green-400 transition-colors"
-                                   th:text="${entry.playerName}">Player</a>
-                            </span>
-                            <span class="text-blue-400 font-mono" th:text="${entry.formattedValue}">0 km</span>
-                        </li>
+                    <ul id="lb-distance" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
+                    </ul>
+                </div>
+
+                <!-- Most Items Crafted -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-hammer text-orange-400 mr-2"></i>
+                        🔨 Más Crafteados
+                    </h3>
+                    <ul id="lb-crafted" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
+                    </ul>
+                </div>
+
+                <!-- Most Damage Dealt -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-bolt text-red-500 mr-2"></i>
+                        💥 Más Daño Infligido
+                    </h3>
+                    <ul id="lb-damage" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
+                    </ul>
+                </div>
+
+                <!-- Most Jumps -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-arrow-up text-green-400 mr-2"></i>
+                        🦘 Más Saltos
+                    </h3>
+                    <ul id="lb-jumps" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
+                    </ul>
+                </div>
+
+                <!-- Most Fish Caught -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-fish text-cyan-400 mr-2"></i>
+                        🐟 Más Peces Pescados
+                    </h3>
+                    <ul id="lb-fish" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
+                    </ul>
+                </div>
+
+                <!-- Most Villager Trades -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fas fa-handshake text-emerald-400 mr-2"></i>
+                        🤝 Más Comercios
+                    </h3>
+                    <ul id="lb-trades" class="space-y-2">
+                        <li class="text-gray-500 text-sm">Cargando...</li>
                     </ul>
                 </div>
             </div>
         </section>
 
-        <!-- Detailed Server Stats -->
+        <!-- Detailed Server Stats - 100% Dynamic -->
         <section class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <i class="fas fa-chart-bar text-purple-400 mr-3"></i>
                 Estadísticas Detalladas del Servidor
+                <span class="ml-3 text-xs text-green-400 live-indicator">● EN VIVO</span>
             </h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                 <!-- Total Damage Dealt -->
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-sword text-red-400 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-red-400" id="total-damage"
-                       th:text="${#numbers.formatInteger(stats.serverTotals.totalDamageDealt, 1, 'COMMA')}">0</p>
+                    <p class="text-xl font-bold text-red-400" id="stat-damage">-</p>
                     <p class="text-xs text-gray-400">Daño Infligido</p>
                 </div>
                 <!-- Total Distance -->
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-route text-blue-400 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-blue-400" id="total-distance"
-                       th:text="${#numbers.formatDecimal(stats.serverTotals.totalDistanceTraveled / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</p>
+                    <p class="text-xl font-bold text-blue-400" id="stat-distance">-</p>
                     <p class="text-xs text-gray-400">Distancia Total</p>
                 </div>
                 <!-- Chests Opened -->
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
                     <i class="fas fa-box-open text-yellow-400 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-yellow-400" id="total-chests"
-                       th:text="${#numbers.formatInteger(stats.serverTotals.totalChestsOpened, 1, 'COMMA')}">0</p>
+                    <p class="text-xl font-bold text-yellow-400" id="stat-chests">-</p>
                     <p class="text-xs text-gray-400">Cofres Abiertos</p>
                 </div>
-                <!-- Total Blocks -->
+                <!-- Jumps -->
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
-                    <i class="fas fa-cubes text-green-400 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-green-400" id="total-blocks"
-                       th:text="${#numbers.formatInteger(stats.serverTotals.totalBlocksMined, 1, 'COMMA')}">0</p>
-                    <p class="text-xs text-gray-400">Bloques Minados</p>
+                    <i class="fas fa-arrow-up text-green-400 text-2xl mb-2"></i>
+                    <p class="text-xl font-bold text-green-400" id="stat-jumps">-</p>
+                    <p class="text-xs text-gray-400">Saltos</p>
                 </div>
-                <!-- Total Crafted -->
+                <!-- Fish Caught -->
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
-                    <i class="fas fa-hammer text-orange-400 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-orange-400" id="total-crafted"
-                       th:text="${#numbers.formatInteger(stats.serverTotals.totalItemsCrafted, 1, 'COMMA')}">0</p>
-                    <p class="text-xs text-gray-400">Items Crafteados</p>
+                    <i class="fas fa-fish text-cyan-400 text-2xl mb-2"></i>
+                    <p class="text-xl font-bold text-cyan-400" id="stat-fish">-</p>
+                    <p class="text-xs text-gray-400">Peces Pescados</p>
                 </div>
-                <!-- Total Mobs -->
+                <!-- Animals Bred -->
                 <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
-                    <i class="fas fa-skull text-pink-400 text-2xl mb-2"></i>
-                    <p class="text-2xl font-bold text-pink-400" id="total-mobs"
-                       th:text="${#numbers.formatInteger(stats.serverTotals.totalMobsKilled, 1, 'COMMA')}">0</p>
-                    <p class="text-xs text-gray-400">Mobs Eliminados</p>
+                    <i class="fas fa-heart text-pink-400 text-2xl mb-2"></i>
+                    <p class="text-xl font-bold text-pink-400" id="stat-bred">-</p>
+                    <p class="text-xs text-gray-400">Animales Criados</p>
+                </div>
+                <!-- Villager Trades -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-handshake text-emerald-400 text-2xl mb-2"></i>
+                    <p class="text-xl font-bold text-emerald-400" id="stat-trades">-</p>
+                    <p class="text-xs text-gray-400">Comercios</p>
+                </div>
+                <!-- Times Slept -->
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-bed text-indigo-400 text-2xl mb-2"></i>
+                    <p class="text-xl font-bold text-indigo-400" id="stat-sleep">-</p>
+                    <p class="text-xs text-gray-400">Veces Dormido</p>
                 </div>
             </div>
         </section>
 
-        <!-- Player Detailed Stats -->
+        <!-- Player Detailed Stats - 100% Dynamic -->
         <section class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <i class="fas fa-user-chart text-cyan-400 mr-3"></i>
                 Estadísticas por Jugador
+                <span class="ml-3 text-xs text-green-400 live-indicator">● EN VIVO</span>
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div th:each="player : ${stats.players}" class="bg-gray-800/50 rounded-lg p-6 card-hover">
-                    <div class="flex items-center mb-4">
-                        <img th:src="'https://mc-heads.net/avatar/' + ${player.name} + '/48'" 
-                             class="w-12 h-12 rounded-lg mr-3" alt="Avatar">
-                        <div>
-                            <h3 class="font-bold text-lg" th:text="${player.name}">Player</h3>
-                            <p class="text-sm text-gray-400" th:text="${player.summary.playTimeFormatted}">0h 0m</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Combat Stats -->
-                    <div class="mb-3" th:if="${player.detailedStats != null}">
-                        <p class="text-xs text-gray-500 uppercase mb-2">⚔️ Combate</p>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Daño infligido:</span>
-                                <span class="text-red-400" th:text="${#numbers.formatInteger(player.detailedStats.damageDealt, 1, 'COMMA')}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Daño recibido:</span>
-                                <span class="text-orange-400" th:text="${#numbers.formatInteger(player.detailedStats.damageTaken, 1, 'COMMA')}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Bloqueado:</span>
-                                <span class="text-blue-400" th:text="${#numbers.formatInteger(player.detailedStats.damageBlocked, 1, 'COMMA')}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Muertes:</span>
-                                <span class="text-pink-400" th:text="${player.summary.totalDeaths}">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Movement Stats -->
-                    <div class="mb-3" th:if="${player.detailedStats != null}">
-                        <p class="text-xs text-gray-500 uppercase mb-2">🚶 Movimiento</p>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Caminando:</span>
-                                <span class="text-green-400" th:text="${#numbers.formatDecimal(player.detailedStats.walkDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Sprint:</span>
-                                <span class="text-green-400" th:text="${#numbers.formatDecimal(player.detailedStats.sprintDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Barco:</span>
-                                <span class="text-blue-400" th:text="${#numbers.formatDecimal(player.detailedStats.boatDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Caballo:</span>
-                                <span class="text-yellow-400" th:text="${#numbers.formatDecimal(player.detailedStats.horseDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Nadando:</span>
-                                <span class="text-cyan-400" th:text="${#numbers.formatDecimal(player.detailedStats.swimDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Volando:</span>
-                                <span class="text-purple-400" th:text="${#numbers.formatDecimal(player.detailedStats.flyDistance / 100000.0, 1, 'COMMA', 1, 'POINT')} + ' km'">0 km</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Interaction Stats -->
-                    <div th:if="${player.detailedStats != null}">
-                        <p class="text-xs text-gray-500 uppercase mb-2">🎮 Interacciones</p>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Cofres:</span>
-                                <span class="text-yellow-400" th:text="${player.detailedStats.chestsOpened}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Crafteos:</span>
-                                <span class="text-orange-400" th:text="${player.detailedStats.craftingTableUses}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Hornos:</span>
-                                <span class="text-red-400" th:text="${player.detailedStats.furnaceUses}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Dormido:</span>
-                                <span class="text-purple-400" th:text="${player.detailedStats.timesSlept}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Comercios:</span>
-                                <span class="text-emerald-400" th:text="${player.detailedStats.villagersTraded}">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Pesca:</span>
-                                <span class="text-blue-400" th:text="${player.detailedStats.fishCaught}">0</span>
-                            </div>
-                        </div>
-                    </div>
+            <div id="players-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-gray-800/50 rounded-lg p-6 text-center">
+                    <p class="text-gray-500">Cargando jugadores...</p>
                 </div>
             </div>
         </section>
@@ -591,30 +516,17 @@
             </div>
         </section>
 
-        <!-- All Players -->
+        <!-- All Players - 100% Dynamic -->
         <section>
             <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <i class="fas fa-users text-green-400 mr-3"></i>
                 Todos los Jugadores
+                <span class="ml-3 text-xs text-green-400 live-indicator">● EN VIVO</span>
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <a th:each="player : ${stats.players}" 
-                   th:href="@{/player/{uuid}(uuid=${player.uuid})}"
-                   class="bg-gray-800/50 rounded-lg p-4 card-hover flex items-center space-x-4 hover:bg-gray-700/50 transition-colors">
-                    <img th:src="'https://mc-heads.net/avatar/' + ${player.uuid} + '/64'" 
-                         alt="Player Head" class="w-12 h-12 rounded">
-                    <div class="flex-1">
-                        <h3 class="font-bold" th:text="${player.name}">Player</h3>
-                        <p class="text-sm text-gray-400">
-                            <i class="fas fa-clock mr-1"></i>
-                            <span th:text="${player.summary.playTimeFormatted}">0h</span>
-                            <span class="mx-2">•</span>
-                            <i class="fas fa-cubes mr-1"></i>
-                            <span th:text="${#numbers.formatInteger(player.summary.totalBlocksMined, 1, 'COMMA')}">0</span> bloques
-                        </p>
-                    </div>
-                    <i class="fas fa-chevron-right text-gray-500"></i>
-                </a>
+            <div id="all-players-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-gray-800/50 rounded-lg p-4 text-center">
+                    <p class="text-gray-500">Cargando jugadores...</p>
+                </div>
             </div>
         </section>
 
@@ -630,10 +542,13 @@
         </footer>
     </div>
 
-    <!-- WebSocket JavaScript -->
+    <!-- WebSocket JavaScript - 100% Dynamic -->
     <script>
         let stompClient = null;
+        let cachedStats = null;
+        let onlinePlayers = new Set();
         
+        // ================= WEBSOCKET CONNECTION =================
         function connect() {
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
@@ -642,53 +557,54 @@
             stompClient.connect({}, function(frame) {
                 updateConnectionStatus(true);
                 
-                // Subscribe to server time (every second for real-time clock)
+                // Subscribe to server time (every 1s)
                 stompClient.subscribe('/topic/time', function(message) {
                     const update = JSON.parse(message.body);
                     updateServerTime(update.serverTime);
                 });
                 
-                // Subscribe to server status
+                // Subscribe to server status (every 30s)
                 stompClient.subscribe('/topic/status', function(message) {
                     const update = JSON.parse(message.body);
                     updateServerStatus(update.data);
                 });
                 
-                // Subscribe to ALL events (join, leave, death, advancement, chat)
+                // Subscribe to ALL events
                 stompClient.subscribe('/topic/events', function(message) {
                     const update = JSON.parse(message.body);
                     addEvent(update.data, update.serverTime);
-                    // Also add chat to chat feed if it's a CHAT event
                     if (update.type === 'CHAT') {
                         addChatMessage(update.data);
                     }
                 });
                 
-                // Subscribe to chat-only topic (dedicated)
+                // Subscribe to chat
                 stompClient.subscribe('/topic/chat', function(message) {
                     const update = JSON.parse(message.body);
                     addChatMessage(update.data);
                 });
                 
-                // Subscribe to player times (for real-time counters)
-                stompClient.subscribe('/topic/player-times', function(message) {
-                    const update = JSON.parse(message.body);
-                    updatePlayerTimes(update.data);
-                });
-                
-                // Subscribe to stats updates
+                // Subscribe to stats updates (every 30s) - CRITICAL FOR DYNAMIC
                 stompClient.subscribe('/topic/stats', function(message) {
                     const update = JSON.parse(message.body);
-                    updateStats(update.data);
+                    cachedStats = update.data;
+                    renderAllStats(update.data);
                 });
                 
-                // Subscribe to item stats updates
+                // Subscribe to item stats
                 stompClient.subscribe('/topic/items', function(message) {
                     const update = JSON.parse(message.body);
                     updateItemStats(update.data);
                 });
                 
-                loadInitialData();
+                // Subscribe to player times
+                stompClient.subscribe('/topic/player-times', function(message) {
+                    const update = JSON.parse(message.body);
+                    updatePlayerTimes(update.data);
+                });
+                
+                // Load all initial data via API
+                loadAllInitialData();
                 
             }, function(error) {
                 updateConnectionStatus(false);
@@ -696,7 +612,221 @@
             });
         }
         
+        // ================= INITIAL DATA LOADING =================
+        async function loadAllInitialData() {
+            try {
+                // Load everything in parallel
+                const [stats, status, events, chat] = await Promise.all([
+                    fetch('/api/stats').then(r => r.json()),
+                    fetch('/api/status').then(r => r.json()),
+                    fetch('/api/events?limit=20').then(r => r.json()),
+                    fetch('/api/chat?limit=20').then(r => r.json())
+                ]);
+                
+                // Cache and render stats
+                cachedStats = stats;
+                renderAllStats(stats);
+                
+                // Update server status
+                updateServerStatus(status);
+                
+                // Render events
+                events.reverse().forEach(e => addEvent(e, null));
+                chat.reverse().forEach(addChatMessage);
+                
+                // Load additional data
+                await Promise.all([
+                    loadItemStats(),
+                    loadRecords(),
+                    loadActivityStats(),
+                    loadSessionStats()
+                ]);
+                
+            } catch (e) {
+                console.error('Error loading initial data:', e);
+            }
+        }
+        
+        // ================= RENDER ALL STATS (FULLY DYNAMIC) =================
+        function renderAllStats(data) {
+            if (!data) return;
+            
+            // Server totals
+            animateStat('stat-total-players', data.totalPlayers);
+            animateStat('stat-total-blocks', formatNumber(data.serverTotals?.totalBlocksMined || 0));
+            animateStat('stat-total-crafted', formatNumber(data.serverTotals?.totalItemsCrafted || 0));
+            animateStat('stat-total-mobs', formatNumber(data.serverTotals?.totalMobsKilled || 0));
+            animateStat('stat-total-deaths', formatNumber(data.serverTotals?.totalDeaths || 0));
+            animateStat('stat-total-playtime', data.serverTotals?.totalPlayTimeFormatted || '-');
+            
+            // Detailed stats
+            animateStat('stat-damage', formatNumber(data.serverTotals?.totalDamageDealt || 0));
+            const distKm = ((data.serverTotals?.totalDistanceTraveled || 0) / 100000).toFixed(1);
+            animateStat('stat-distance', distKm + ' km');
+            animateStat('stat-chests', formatNumber(data.serverTotals?.totalChestsOpened || 0));
+            
+            // Calculate additional totals from players
+            let totalJumps = 0, totalFish = 0, totalBred = 0, totalTrades = 0, totalSleep = 0;
+            if (data.players) {
+                data.players.forEach(p => {
+                    totalJumps += p.summary?.jumps || 0;
+                    if (p.detailedStats) {
+                        totalFish += p.detailedStats.fishCaught || 0;
+                        totalBred += p.detailedStats.animalsBreed || 0;
+                        totalTrades += p.detailedStats.villagersTraded || 0;
+                        totalSleep += p.detailedStats.timesSlept || 0;
+                    }
+                });
+            }
+            animateStat('stat-jumps', formatNumber(totalJumps));
+            animateStat('stat-fish', formatNumber(totalFish));
+            animateStat('stat-bred', formatNumber(totalBred));
+            animateStat('stat-trades', formatNumber(totalTrades));
+            animateStat('stat-sleep', formatNumber(totalSleep));
+            
+            // Leaderboards
+            if (data.leaderboards) {
+                renderLeaderboard('lb-blocks', data.leaderboards.mostBlocksMined, 'green');
+                renderLeaderboard('lb-mobs', data.leaderboards.mostMobsKilled, 'red');
+                renderLeaderboard('lb-playtime', data.leaderboards.mostPlayTime, 'purple', true);
+                renderLeaderboard('lb-deaths', data.leaderboards.mostDeaths, 'pink');
+                renderLeaderboard('lb-distance', data.leaderboards.mostDistanceWalked, 'blue', true);
+                renderLeaderboard('lb-crafted', data.leaderboards.mostItemsCrafted, 'orange');
+                renderLeaderboard('lb-damage', data.leaderboards.mostDamageDealt, 'red');
+                renderLeaderboard('lb-jumps', data.leaderboards.mostJumps, 'green');
+                renderLeaderboard('lb-fish', data.leaderboards.mostFishCaught, 'cyan');
+                renderLeaderboard('lb-trades', data.leaderboards.mostVillagerTrades, 'emerald');
+            }
+            
+            // Players detailed
+            if (data.players) {
+                renderPlayersDetailed(data.players);
+                renderAllPlayersList(data.players);
+            }
+        }
+        
+        // ================= LEADERBOARD RENDERING =================
+        function renderLeaderboard(containerId, entries, color, useFormatted = false) {
+            const container = document.getElementById(containerId);
+            if (!container || !entries || entries.length === 0) {
+                if (container) container.innerHTML = '<li class="text-gray-500 text-sm">Sin datos</li>';
+                return;
+            }
+            
+            container.innerHTML = entries.map(entry => {
+                const rankClass = entry.rank === 1 ? 'text-yellow-400' : 
+                                  entry.rank === 2 ? 'text-gray-400' : 
+                                  entry.rank === 3 ? 'text-orange-600' : 'text-gray-500';
+                const displayValue = useFormatted ? entry.formattedValue : formatNumber(entry.value);
+                const isOnline = onlinePlayers.has(entry.playerName);
+                
+                return `
+                    <li class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                        <span class="flex items-center">
+                            <span class="${rankClass} w-6 font-bold">#${entry.rank}</span>
+                            <a href="/player/${entry.playerUuid}" class="ml-2 hover:text-green-400 transition-colors ${isOnline ? 'text-green-400' : ''}">
+                                ${isOnline ? '🟢 ' : ''}${entry.playerName}
+                            </a>
+                        </span>
+                        <span class="text-${color}-400 font-mono">${displayValue}</span>
+                    </li>
+                `;
+            }).join('');
+        }
+        
+        // ================= PLAYERS DETAILED RENDERING =================
+        function renderPlayersDetailed(players) {
+            const container = document.getElementById('players-container');
+            if (!container || !players || players.length === 0) return;
+            
+            container.innerHTML = players.map(player => {
+                const isOnline = onlinePlayers.has(player.name);
+                const d = player.detailedStats || {};
+                const s = player.summary || {};
+                
+                return `
+                    <div class="bg-gray-800/50 rounded-lg p-6 card-hover ${isOnline ? 'ring-2 ring-green-500' : ''}">
+                        <div class="flex items-center mb-4">
+                            <img src="https://mc-heads.net/avatar/${player.name}/48" class="w-12 h-12 rounded-lg mr-3" alt="Avatar">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg ${isOnline ? 'text-green-400' : ''}">${isOnline ? '🟢 ' : ''}${player.name}</h3>
+                                <p class="text-sm text-gray-400" id="player-time-${player.uuid}">${s.playTimeFormatted || '-'}</p>
+                            </div>
+                            ${isOnline ? '<span class="text-xs bg-green-600 px-2 py-1 rounded">EN LÍNEA</span>' : ''}
+                        </div>
+                        
+                        <!-- Combat -->
+                        <div class="mb-3">
+                            <p class="text-xs text-gray-500 uppercase mb-2">⚔️ Combate</p>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-400">Daño infligido:</span><span class="text-red-400">${formatNumber(d.damageDealt || 0)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Daño recibido:</span><span class="text-orange-400">${formatNumber(d.damageTaken || 0)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Bloqueado:</span><span class="text-blue-400">${formatNumber(d.damageBlocked || 0)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Muertes:</span><span class="text-pink-400">${s.totalDeaths || 0}</span></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Movement -->
+                        <div class="mb-3">
+                            <p class="text-xs text-gray-500 uppercase mb-2">🚶 Movimiento</p>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-400">Caminando:</span><span class="text-green-400">${formatKm(d.walkDistance)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Sprint:</span><span class="text-green-400">${formatKm(d.sprintDistance)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Barco:</span><span class="text-blue-400">${formatKm(d.boatDistance)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Caballo:</span><span class="text-yellow-400">${formatKm(d.horseDistance)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Nadando:</span><span class="text-cyan-400">${formatKm(d.swimDistance)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Elytra:</span><span class="text-purple-400">${formatKm(d.elytraDistance)}</span></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Interactions -->
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase mb-2">🎮 Interacciones</p>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-400">Cofres:</span><span class="text-yellow-400">${d.chestsOpened || 0}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Crafteos:</span><span class="text-orange-400">${d.craftingTableUses || 0}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Hornos:</span><span class="text-red-400">${d.furnaceUses || 0}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Dormido:</span><span class="text-purple-400">${d.timesSlept || 0}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Comercios:</span><span class="text-emerald-400">${d.villagersTraded || 0}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Pesca:</span><span class="text-blue-400">${d.fishCaught || 0}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ================= ALL PLAYERS LIST =================
+        function renderAllPlayersList(players) {
+            const container = document.getElementById('all-players-list');
+            if (!container || !players) return;
+            
+            container.innerHTML = players.map(player => {
+                const isOnline = onlinePlayers.has(player.name);
+                const s = player.summary || {};
+                
+                return `
+                    <a href="/player/${player.uuid}" class="bg-gray-800/50 rounded-lg p-4 card-hover flex items-center space-x-4 hover:bg-gray-700/50 transition-colors ${isOnline ? 'ring-2 ring-green-500' : ''}">
+                        <img src="https://mc-heads.net/avatar/${player.uuid}/64" alt="Player Head" class="w-12 h-12 rounded">
+                        <div class="flex-1">
+                            <h3 class="font-bold ${isOnline ? 'text-green-400' : ''}">${isOnline ? '🟢 ' : ''}${player.name}</h3>
+                            <p class="text-sm text-gray-400">
+                                <i class="fas fa-clock mr-1"></i>
+                                <span>${s.playTimeFormatted || '-'}</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-cubes mr-1"></i>
+                                <span>${formatNumber(s.totalBlocksMined || 0)}</span> bloques
+                            </p>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-500"></i>
+                    </a>
+                `;
+            }).join('');
+        }
+        
+        // ================= SERVER TIME & STATUS =================
         function updateServerTime(serverTime) {
+            if (!serverTime) return;
             document.getElementById('server-time').textContent = serverTime.time;
             document.getElementById('server-date').textContent = `${serverTime.dayOfWeek}, ${serverTime.date}`;
             document.getElementById('last-update').textContent = serverTime.time;
@@ -707,7 +837,7 @@
             const wsStatus = document.getElementById('ws-status');
             if (connected) {
                 statusEl.innerHTML = '<span class="w-3 h-3 bg-green-500 rounded-full mr-2 live-indicator"></span>En vivo';
-                wsStatus.textContent = 'WebSocket: Conectado';
+                wsStatus.textContent = 'WebSocket: Conectado ✓';
             } else {
                 statusEl.innerHTML = '<span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>Desconectado';
                 wsStatus.textContent = 'WebSocket: Desconectado';
@@ -715,22 +845,55 @@
         }
         
         function updateServerStatus(status) {
+            if (!status) return;
+            
+            const serverStatusEl = document.getElementById('server-status');
+            if (status.online) {
+                serverStatusEl.innerHTML = '<span class="w-3 h-3 bg-green-500 rounded-full mr-2 live-indicator"></span><span class="font-bold">Servidor Online</span>';
+            } else {
+                serverStatusEl.innerHTML = '<span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span><span class="font-bold">Servidor Offline</span>';
+            }
+            
             document.getElementById('player-count').textContent = status.playerCount;
             document.getElementById('max-players').textContent = status.maxPlayers;
             
-            const playersList = document.getElementById('online-players-list');
-            playersList.innerHTML = status.onlinePlayers.map(p => 
-                `<span class="bg-green-600/30 text-green-300 px-3 py-1 rounded-full text-sm">
-                    <i class="fas fa-circle text-green-400 text-xs mr-1"></i>${p.name}
-                </span>`
-            ).join('');
+            // Update online players set
+            onlinePlayers.clear();
+            status.onlinePlayers?.forEach(p => onlinePlayers.add(p.name));
             
-            if (status.lastUpdatedFormatted) {
-                document.getElementById('last-update').textContent = status.lastUpdatedFormatted;
+            const playersList = document.getElementById('online-players-list');
+            if (status.onlinePlayers && status.onlinePlayers.length > 0) {
+                playersList.innerHTML = status.onlinePlayers.map(p => 
+                    `<span class="bg-green-600/30 text-green-300 px-3 py-1 rounded-full text-sm">
+                        <i class="fas fa-circle text-green-400 text-xs mr-1"></i>${p.name}
+                    </span>`
+                ).join('');
+            } else {
+                playersList.innerHTML = '<span class="text-gray-500 text-sm">Nadie conectado</span>';
+            }
+            
+            // Re-render players if we have cached stats (to update online indicators)
+            if (cachedStats) {
+                renderPlayersDetailed(cachedStats.players);
+                renderAllPlayersList(cachedStats.players);
             }
         }
         
+        // ================= PLAYER TIMES UPDATE =================
+        function updatePlayerTimes(players) {
+            if (!players) return;
+            players.forEach(p => {
+                const el = document.getElementById(`player-time-${p.uuid}`);
+                if (el) {
+                    el.textContent = p.playTimeFormatted;
+                    if (p.isOnline) el.classList.add('text-green-400');
+                }
+            });
+        }
+        
+        // ================= ITEM STATS =================
         function updateItemStats(items) {
+            if (!items) return;
             if (items.mined) renderItemList('top-mined', items.mined.entries, '⛏️');
             if (items.used) renderItemList('top-used', items.used.entries, '🖱️');
             if (items.crafted) renderItemList('top-crafted', items.crafted.entries, '🔨');
@@ -739,120 +902,6 @@
             if (items.picked_up) renderItemList('top-picked-up', items.picked_up.entries, '🤲');
         }
         
-        function updatePlayerTimes(players) {
-            players.forEach(p => {
-                const el = document.getElementById(`player-time-${p.uuid}`);
-                if (el) {
-                    el.textContent = p.playTimeFormatted;
-                    if (p.isOnline) {
-                        el.classList.add('text-green-400');
-                    }
-                }
-            });
-        }
-        
-        function updateStats(data) {
-            if (data.serverTotals) {
-                const t = data.serverTotals;
-                updateStatValue('total-blocks', t.totalBlocksMined);
-                updateStatValue('total-crafted', t.totalItemsCrafted);
-                updateStatValue('total-mobs', t.totalMobsKilled);
-                updateStatValue('total-deaths', t.totalDeaths);
-                updateStatValue('total-damage', t.totalDamageDealt);
-            }
-        }
-        
-        function updateStatValue(id, value) {
-            const el = document.getElementById(id);
-            if (el) el.textContent = value.toLocaleString();
-        }
-        
-        function addEvent(event, serverTime) {
-            const feed = document.getElementById('events-feed');
-            const firstChild = feed.firstElementChild;
-            if (firstChild && firstChild.textContent.includes('Esperando')) {
-                feed.innerHTML = '';
-            }
-            
-            let icon, color;
-            switch(event.type) {
-                case 'JOIN': icon = 'sign-in-alt'; color = 'green'; break;
-                case 'LEAVE': icon = 'sign-out-alt'; color = 'red'; break;
-                case 'DEATH': icon = 'skull'; color = 'pink'; break;
-                case 'ADVANCEMENT': icon = 'trophy'; color = 'yellow'; break;
-                case 'CHAT': icon = 'comment'; color = 'blue'; break;
-                default: icon = 'info-circle'; color = 'gray';
-            }
-            
-            const dateTime = event.fullDateTime || event.timestamp;
-            const eventHtml = `
-                <div class="flex items-start space-x-2 py-1 event-enter border-b border-gray-700/50 last:border-0">
-                    <span class="text-${color}-400 w-5"><i class="fas fa-${icon}"></i></span>
-                    <span class="text-gray-500 text-xs whitespace-nowrap">${dateTime}</span>
-                    <span class="text-sm flex-1">${event.message}</span>
-                </div>
-            `;
-            
-            feed.insertAdjacentHTML('afterbegin', eventHtml);
-            
-            // Keep only last 20 events
-            while (feed.children.length > 20) {
-                feed.removeChild(feed.lastChild);
-            }
-        }
-        
-        function addChatMessage(event) {
-            const feed = document.getElementById('chat-feed');
-            const firstChild = feed.firstElementChild;
-            if (firstChild && firstChild.textContent.includes('Cargando')) {
-                feed.innerHTML = '';
-            }
-            
-            const dateTime = event.fullDateTime || event.timestamp;
-            const chatHtml = `
-                <div class="py-1 event-enter border-b border-gray-700/50 last:border-0">
-                    <span class="text-gray-500 text-xs">${dateTime}</span>
-                    <span class="text-green-400 font-bold">&lt;${event.playerName}&gt;</span>
-                    <span class="text-sm">${event.message}</span>
-                </div>
-            `;
-            
-            feed.insertAdjacentHTML('afterbegin', chatHtml);
-            
-            while (feed.children.length > 30) {
-                feed.removeChild(feed.lastChild);
-            }
-        }
-        
-        async function loadInitialData() {
-            try {
-                // Load server status
-                const statusRes = await fetch('/api/status');
-                const status = await statusRes.json();
-                updateServerStatus(status);
-                
-                // Load recent events
-                const eventsRes = await fetch('/api/events?limit=20');
-                const events = await eventsRes.json();
-                events.reverse().forEach(e => addEvent(e, null));
-                
-                // Load recent chat
-                const chatRes = await fetch('/api/chat?limit=20');
-                const chat = await chatRes.json();
-                chat.reverse().forEach(addChatMessage);
-                
-                // Load new data (await each to ensure proper execution)
-                await loadItemStats();
-                await loadRecords();
-                await loadActivityStats();
-                await loadSessionStats();
-                
-            } catch (e) {
-                console.error('Error loading initial data:', e);
-            }
-        }
-        
-        // Load Item Statistics
         async function loadItemStats() {
             try {
                 const [mined, used, crafted, killed, killedBy, pickedUp] = await Promise.all([
@@ -877,6 +926,7 @@
         
         function renderItemList(containerId, items, emoji) {
             const container = document.getElementById(containerId);
+            if (!container) return;
             if (!items || items.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-sm">Sin datos</p>';
                 return;
@@ -887,16 +937,17 @@
                     <span class="text-sm truncate flex-1" title="${item.itemId}">
                         ${i < 3 ? ['🥇', '🥈', '🥉'][i] : `${i+1}.`} ${item.itemName}
                     </span>
-                    <span class="text-green-400 font-mono text-sm ml-2">${item.count.toLocaleString()}</span>
+                    <span class="text-green-400 font-mono text-sm ml-2">${formatNumber(item.count)}</span>
                 </div>
             `).join('');
         }
         
-        // Load Records
+        // ================= RECORDS =================
         async function loadRecords() {
             try {
                 const records = await fetch('/api/records').then(r => r.json());
                 const container = document.getElementById('records-container');
+                if (!container) return;
                 
                 const recordsList = [
                     { data: records.mostDiamondsMined, icon: '💎', color: 'cyan' },
@@ -929,17 +980,17 @@
             }
         }
         
-        // Load Activity Stats
+        // ================= ACTIVITY STATS =================
         async function loadActivityStats() {
             try {
                 const activity = await fetch('/api/activity?days=30').then(r => r.json());
                 
-                document.getElementById('most-active-hour').textContent = `${activity.mostActiveHour}:00`;
-                document.getElementById('most-active-day').textContent = activity.mostActiveDay;
-                document.getElementById('peak-players').textContent = activity.peakPlayers;
-                document.getElementById('peak-players-date').textContent = activity.peakPlayersDate;
+                const el = (id) => document.getElementById(id);
+                if (el('most-active-hour')) el('most-active-hour').textContent = `${activity.mostActiveHour}:00`;
+                if (el('most-active-day')) el('most-active-day').textContent = activity.mostActiveDay;
+                if (el('peak-players')) el('peak-players').textContent = activity.peakPlayers;
+                if (el('peak-players-date')) el('peak-players-date').textContent = activity.peakPlayersDate;
                 
-                // Render hourly chart
                 renderHourlyChart(activity.hourlyActivity);
             } catch (e) {
                 console.error('Error loading activity stats:', e);
@@ -948,13 +999,13 @@
         
         function renderHourlyChart(hourlyData) {
             const container = document.getElementById('hourly-chart');
-            const maxValue = Math.max(...Object.values(hourlyData), 1);
+            if (!container || !hourlyData) return;
             
-            // Sort by hour (0-23)
+            const maxValue = Math.max(...Object.values(hourlyData), 1);
             const sortedEntries = Object.entries(hourlyData).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
             
             container.innerHTML = sortedEntries.map(([hour, count]) => {
-                const heightPx = Math.max(Math.round((count / maxValue) * 128), 2); // 128px = h-32
+                const heightPx = Math.max(Math.round((count / maxValue) * 128), 2);
                 const color = count === maxValue ? 'bg-yellow-400' : 'bg-green-500';
                 return `
                     <div class="flex-1 flex flex-col items-center justify-end h-full" title="${hour}:00 - ${count} eventos">
@@ -964,44 +1015,120 @@
             }).join('');
         }
         
-        // Load Session Stats
+        // ================= SESSION STATS =================
         async function loadSessionStats() {
             try {
-                const [sessions, activity] = await Promise.all([
-                    fetch('/api/sessions?days=30').then(r => r.json()),
-                    fetch('/api/activity?days=30').then(r => r.json())
-                ]);
+                const sessions = await fetch('/api/sessions?days=30').then(r => r.json());
                 
-                document.getElementById('total-sessions').textContent = sessions.totalSessions;
-                document.getElementById('avg-session').textContent = sessions.averageSessionFormatted;
+                const el = (id) => document.getElementById(id);
+                if (el('total-sessions')) el('total-sessions').textContent = sessions.totalSessions;
+                if (el('avg-session')) el('avg-session').textContent = sessions.averageSessionFormatted;
                 
                 if (sessions.longestSession) {
-                    document.getElementById('longest-session').textContent = sessions.longestSession.durationFormatted;
-                    document.getElementById('longest-session-player').textContent = sessions.longestSession.playerName;
+                    if (el('longest-session')) el('longest-session').textContent = sessions.longestSession.durationFormatted;
+                    if (el('longest-session-player')) el('longest-session-player').textContent = sessions.longestSession.playerName;
                 }
                 
-                // Render recent sessions
                 const container = document.getElementById('recent-sessions');
-                if (sessions.recentSessions.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-sm">Sin sesiones recientes</p>';
-                    return;
+                if (container && sessions.recentSessions) {
+                    if (sessions.recentSessions.length === 0) {
+                        container.innerHTML = '<p class="text-gray-500 text-sm">Sin sesiones recientes</p>';
+                    } else {
+                        container.innerHTML = sessions.recentSessions.slice(0, 10).map(s => `
+                            <div class="flex justify-between items-center py-1 border-b border-gray-700/30 text-sm">
+                                <span class="text-white">${s.playerName}</span>
+                                <span class="text-gray-400 text-xs">${s.joinTime}</span>
+                                <span class="${s.durationFormatted === 'En línea' ? 'text-green-400' : 'text-purple-400'} font-mono">
+                                    ${s.durationFormatted || '-'}
+                                </span>
+                            </div>
+                        `).join('');
+                    }
                 }
-                
-                container.innerHTML = sessions.recentSessions.slice(0, 10).map(s => `
-                    <div class="flex justify-between items-center py-1 border-b border-gray-700/30 text-sm">
-                        <span class="text-white">${s.playerName}</span>
-                        <span class="text-gray-400 text-xs">${s.joinTime}</span>
-                        <span class="${s.durationFormatted === 'En línea' ? 'text-green-400' : 'text-purple-400'} font-mono">
-                            ${s.durationFormatted || '-'}
-                        </span>
-                    </div>
-                `).join('');
             } catch (e) {
                 console.error('Error loading session stats:', e);
             }
         }
         
-        // Connect on page load
+        // ================= EVENTS =================
+        function addEvent(event, serverTime) {
+            const feed = document.getElementById('events-feed');
+            if (!feed) return;
+            
+            const firstChild = feed.firstElementChild;
+            if (firstChild && firstChild.textContent.includes('Esperando')) {
+                feed.innerHTML = '';
+            }
+            
+            let icon, color;
+            switch(event.type) {
+                case 'JOIN': icon = 'sign-in-alt'; color = 'green'; break;
+                case 'LEAVE': icon = 'sign-out-alt'; color = 'red'; break;
+                case 'DEATH': icon = 'skull'; color = 'pink'; break;
+                case 'ADVANCEMENT': icon = 'trophy'; color = 'yellow'; break;
+                case 'CHAT': icon = 'comment'; color = 'blue'; break;
+                default: icon = 'info-circle'; color = 'gray';
+            }
+            
+            const dateTime = event.fullDateTime || event.timestamp;
+            const eventHtml = `
+                <div class="flex items-start space-x-2 py-1 event-enter border-b border-gray-700/50 last:border-0">
+                    <span class="text-${color}-400 w-5"><i class="fas fa-${icon}"></i></span>
+                    <span class="text-gray-500 text-xs whitespace-nowrap">${dateTime}</span>
+                    <span class="text-sm flex-1">${event.message}</span>
+                </div>
+            `;
+            
+            feed.insertAdjacentHTML('afterbegin', eventHtml);
+            while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+        }
+        
+        function addChatMessage(event) {
+            const feed = document.getElementById('chat-feed');
+            if (!feed) return;
+            
+            const firstChild = feed.firstElementChild;
+            if (firstChild && firstChild.textContent.includes('Cargando')) {
+                feed.innerHTML = '';
+            }
+            
+            const dateTime = event.fullDateTime || event.timestamp;
+            const chatHtml = `
+                <div class="py-1 event-enter border-b border-gray-700/50 last:border-0">
+                    <span class="text-gray-500 text-xs">${dateTime}</span>
+                    <span class="text-green-400 font-bold">&lt;${event.playerName}&gt;</span>
+                    <span class="text-sm">${event.message}</span>
+                </div>
+            `;
+            
+            feed.insertAdjacentHTML('afterbegin', chatHtml);
+            while (feed.children.length > 30) feed.removeChild(feed.lastChild);
+        }
+        
+        // ================= UTILITY FUNCTIONS =================
+        function formatNumber(num) {
+            return (num || 0).toLocaleString('es-ES');
+        }
+        
+        function formatKm(cm) {
+            const km = (cm || 0) / 100000;
+            return km.toFixed(1) + ' km';
+        }
+        
+        function animateStat(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            const oldValue = el.textContent;
+            el.textContent = value;
+            
+            if (oldValue !== '-' && oldValue !== value) {
+                el.classList.add('stat-update');
+                setTimeout(() => el.classList.remove('stat-update'), 500);
+            }
+        }
+        
+        // ================= START =================
         connect();
     </script>
 </body>

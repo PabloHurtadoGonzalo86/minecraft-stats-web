@@ -211,7 +211,13 @@ class StatsService(
                 .map { it.copy(formattedValue = formatPlayTime(it.value)) },
             mostDeaths = buildLeaderboard(players, "muertes") { it.summary.totalDeaths },
             mostDistanceWalked = buildLeaderboard(players, "") { it.summary.distanceWalkedCm }
-                .map { it.copy(formattedValue = formatDistance(it.value)) }
+                .map { it.copy(formattedValue = formatDistance(it.value)) },
+            // New leaderboards
+            mostItemsCrafted = buildLeaderboard(players, "items crafteados") { it.summary.totalItemsCrafted },
+            mostDamageDealt = buildLeaderboard(players, "daño") { it.detailedStats?.damageDealt ?: 0L },
+            mostJumps = buildLeaderboard(players, "saltos") { it.summary.jumps },
+            mostFishCaught = buildLeaderboard(players, "peces") { it.detailedStats?.fishCaught ?: 0L },
+            mostVillagerTrades = buildLeaderboard(players, "comercios") { it.detailedStats?.villagersTraded ?: 0L }
         )
     }
 
@@ -248,6 +254,13 @@ class StatsService(
             (d?.boatDistance ?: 0L) + (d?.horseDistance ?: 0L) + (d?.flyDistance ?: 0L)
         }
         val totalChestsOpened = players.sumOf { it.detailedStats?.chestsOpened ?: 0L }
+        
+        // New totals
+        val totalJumps = players.sumOf { it.summary.jumps }
+        val totalFishCaught = players.sumOf { it.detailedStats?.fishCaught ?: 0L }
+        val totalAnimalsBred = players.sumOf { it.detailedStats?.animalsBreed ?: 0L }
+        val totalVillagerTrades = players.sumOf { it.detailedStats?.villagersTraded ?: 0L }
+        val totalTimesSlept = players.sumOf { it.detailedStats?.timesSlept ?: 0L }
 
         return ServerTotals(
             totalBlocksMined = totalBlocksMined,
@@ -258,7 +271,12 @@ class StatsService(
             totalPlayTimeFormatted = formatPlayTime(totalPlayTimeTicks),
             totalDamageDealt = totalDamageDealt,
             totalDistanceTraveled = totalDistanceTraveled,
-            totalChestsOpened = totalChestsOpened
+            totalChestsOpened = totalChestsOpened,
+            totalJumps = totalJumps,
+            totalFishCaught = totalFishCaught,
+            totalAnimalsBred = totalAnimalsBred,
+            totalVillagerTrades = totalVillagerTrades,
+            totalTimesSlept = totalTimesSlept
         )
     }
 }
