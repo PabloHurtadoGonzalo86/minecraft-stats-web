@@ -326,7 +326,74 @@ class ItemStatsService(
             )
         )
     }
-    
+
+    /**
+     * Get comprehensive diamond statistics for the server
+     * Based on official Minecraft statistics: https://minecraft.wiki/w/Statistics
+     */
+    fun getDiamondStats(): DiamondStats {
+        val serverStats = statsService.getServerStats()
+
+        // Total diamond ore mined (normal)
+        val totalDiamondOreMined = serverStats.players.sumOf {
+            it.stats.mined["minecraft:diamond_ore"] ?: 0
+        }
+
+        // Total deepslate diamond ore mined
+        val totalDeepslateDiamondOreMined = serverStats.players.sumOf {
+            it.stats.mined["minecraft:deepslate_diamond_ore"] ?: 0
+        }
+
+        // Total diamonds picked up
+        val totalDiamondsPickedUp = serverStats.players.sumOf {
+            it.stats.pickedUp["minecraft:diamond"] ?: 0
+        }
+
+        // Total diamonds dropped
+        val totalDiamondsDropped = serverStats.players.sumOf {
+            it.stats.dropped["minecraft:diamond"] ?: 0
+        }
+
+        // Diamond tools crafted
+        val diamondTools = listOf("pickaxe", "sword", "axe", "shovel", "hoe")
+        val toolsCrafted = diamondTools.sumOf { tool ->
+            serverStats.players.sumOf { it.stats.crafted["minecraft:diamond_$tool"] ?: 0 }
+        }
+
+        // Diamond armor crafted
+        val diamondArmor = listOf("helmet", "chestplate", "leggings", "boots")
+        val armorCrafted = diamondArmor.sumOf { armor ->
+            serverStats.players.sumOf { it.stats.crafted["minecraft:diamond_$armor"] ?: 0 }
+        }
+
+        // Diamond tools broken
+        val toolsBroken = diamondTools.sumOf { tool ->
+            serverStats.players.sumOf { it.stats.broken["minecraft:diamond_$tool"] ?: 0 }
+        }
+
+        // Leaderboard top 5 diamond miners
+        val leaderboard = serverStats.players
+            .map { player ->
+                val total = (player.stats.mined["minecraft:diamond_ore"] ?: 0) +
+                           (player.stats.mined["minecraft:deepslate_diamond_ore"] ?: 0)
+                DiamondLeaderboardEntry(player.name, player.uuid, total)
+            }
+            .filter { it.total > 0 }
+            .sortedByDescending { it.total }
+            .take(5)
+
+        return DiamondStats(
+            totalDiamondOreMined = totalDiamondOreMined,
+            totalDeepslateDiamondOreMined = totalDeepslateDiamondOreMined,
+            totalDiamondsPickedUp = totalDiamondsPickedUp,
+            totalDiamondsDropped = totalDiamondsDropped,
+            toolsCrafted = toolsCrafted,
+            armorCrafted = armorCrafted,
+            toolsBroken = toolsBroken,
+            leaderboard = leaderboard
+        )
+    }
+
     /**
      * Format minecraft item ID to readable name
      */

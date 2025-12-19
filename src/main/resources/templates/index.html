@@ -321,6 +321,78 @@
             </div>
         </section>
 
+        <!-- Diamond Statistics Section -->
+        <section class="mb-12" id="diamond-section">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <span class="text-3xl mr-3">💎</span>
+                Estadísticas de Diamantes
+                <span class="ml-2 text-xs text-green-400 animate-pulse">● EN VIVO</span>
+            </h2>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-cyan-900/50 to-cyan-700/30 rounded-lg p-4 text-center card-hover">
+                    <div class="text-3xl mb-2">⛏️</div>
+                    <p class="text-cyan-400 font-bold text-2xl" id="diamond-total-mined">-</p>
+                    <p class="text-xs text-gray-400">Total Minados</p>
+                </div>
+                <div class="bg-gradient-to-br from-blue-900/50 to-blue-700/30 rounded-lg p-4 text-center card-hover">
+                    <div class="text-3xl mb-2">💎</div>
+                    <p class="text-blue-400 font-bold text-2xl" id="diamond-picked-up">-</p>
+                    <p class="text-xs text-gray-400">Recogidos</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-900/50 to-purple-700/30 rounded-lg p-4 text-center card-hover">
+                    <div class="text-3xl mb-2">🔨</div>
+                    <p class="text-purple-400 font-bold text-2xl" id="diamond-tools-crafted">-</p>
+                    <p class="text-xs text-gray-400">Herramientas</p>
+                </div>
+                <div class="bg-gradient-to-br from-red-900/50 to-red-700/30 rounded-lg p-4 text-center card-hover">
+                    <div class="text-3xl mb-2">💔</div>
+                    <p class="text-red-400 font-bold text-2xl" id="diamond-tools-broken">-</p>
+                    <p class="text-xs text-gray-400">Rotas</p>
+                </div>
+            </div>
+
+            <!-- Mining Breakdown + Leaderboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Mining Breakdown -->
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-4 text-cyan-400">⛏️ Desglose de Minería</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Diamond Ore (Normal)</span>
+                            <span class="text-cyan-400 font-mono" id="diamond-ore-normal">-</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Deepslate Diamond Ore</span>
+                            <span class="text-cyan-400 font-mono" id="diamond-ore-deepslate">-</span>
+                        </div>
+                        <div class="border-t border-gray-700 pt-2 flex justify-between items-center">
+                            <span class="text-white font-bold">Total</span>
+                            <span class="text-cyan-400 font-mono font-bold" id="diamond-ore-total">-</span>
+                        </div>
+                    </div>
+                    <!-- Diamond Flow -->
+                    <div class="mt-4 pt-4 border-t border-gray-700">
+                        <h4 class="text-sm font-bold mb-2 text-gray-400">📊 Flujo de Diamantes</h4>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-green-400">+<span id="diamond-flow-in">0</span> recogidos</span>
+                            <span class="text-red-400">-<span id="diamond-flow-out">0</span> soltados</span>
+                            <span class="text-cyan-400 font-bold">=<span id="diamond-flow-net">0</span> neto</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Top 5 -->
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-4 text-yellow-400">🏆 Top Mineros de Diamantes</h3>
+                    <div class="space-y-2" id="diamond-leaderboard">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Item Statistics -->
         <section class="mb-12" id="items-section">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
@@ -596,7 +668,13 @@
                     const update = JSON.parse(message.body);
                     updateItemStats(update.data);
                 });
-                
+
+                // Subscribe to diamond stats (real-time every 1 second)
+                stompClient.subscribe('/topic/diamonds', function(message) {
+                    const update = JSON.parse(message.body);
+                    updateDiamondStats(update.data);
+                });
+
                 // Subscribe to player times
                 stompClient.subscribe('/topic/player-times', function(message) {
                     const update = JSON.parse(message.body);
@@ -637,6 +715,7 @@
                 // Load additional data
                 await Promise.all([
                     loadItemStats(),
+                    loadDiamondStats(),
                     loadRecords(),
                     loadActivityStats(),
                     loadSessionStats()
@@ -890,7 +969,73 @@
                 }
             });
         }
-        
+
+        // ================= DIAMOND STATS =================
+        function updateDiamondStats(data) {
+            if (!data) return;
+
+            // Totals
+            const totalMined = (data.totalDiamondOreMined || 0) + (data.totalDeepslateDiamondOreMined || 0);
+            animateStat('diamond-total-mined', formatNumber(totalMined));
+            animateStat('diamond-picked-up', formatNumber(data.totalDiamondsPickedUp || 0));
+            animateStat('diamond-tools-crafted', formatNumber((data.toolsCrafted || 0) + (data.armorCrafted || 0)));
+            animateStat('diamond-tools-broken', formatNumber(data.toolsBroken || 0));
+
+            // Breakdown
+            animateStat('diamond-ore-normal', formatNumber(data.totalDiamondOreMined || 0));
+            animateStat('diamond-ore-deepslate', formatNumber(data.totalDeepslateDiamondOreMined || 0));
+            animateStat('diamond-ore-total', formatNumber(totalMined));
+
+            // Flow
+            const flowIn = data.totalDiamondsPickedUp || 0;
+            const flowOut = data.totalDiamondsDropped || 0;
+            const flowInEl = document.getElementById('diamond-flow-in');
+            const flowOutEl = document.getElementById('diamond-flow-out');
+            const flowNetEl = document.getElementById('diamond-flow-net');
+            if (flowInEl) flowInEl.textContent = formatNumber(flowIn);
+            if (flowOutEl) flowOutEl.textContent = formatNumber(flowOut);
+            if (flowNetEl) flowNetEl.textContent = formatNumber(flowIn - flowOut);
+
+            // Leaderboard
+            renderDiamondLeaderboard(data.leaderboard || []);
+        }
+
+        function renderDiamondLeaderboard(leaderboard) {
+            const container = document.getElementById('diamond-leaderboard');
+            if (!container) return;
+
+            if (leaderboard.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Sin datos de diamantes</p>';
+                return;
+            }
+
+            const maxValue = leaderboard[0]?.total || 1;
+            const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+
+            container.innerHTML = leaderboard.map((entry, i) => {
+                const percentage = (entry.total / maxValue) * 100;
+                return `
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 text-center">${medals[i] || (i+1) + '.'}</span>
+                        <span class="flex-1 truncate">${entry.playerName}</span>
+                        <div class="w-24 bg-gray-700 rounded-full h-2">
+                            <div class="bg-cyan-500 h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+                        </div>
+                        <span class="text-cyan-400 font-mono w-16 text-right">${formatNumber(entry.total)} 💎</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadDiamondStats() {
+            try {
+                const data = await fetch('/api/diamonds').then(r => r.json());
+                updateDiamondStats(data);
+            } catch (e) {
+                console.error('Error loading diamond stats:', e);
+            }
+        }
+
         // ================= ITEM STATS =================
         function updateItemStats(items) {
             if (!items) return;

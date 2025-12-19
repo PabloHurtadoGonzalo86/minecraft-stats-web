@@ -200,4 +200,20 @@ class LiveUpdateService(
             logger.error("Error broadcasting stats: ${e.message}")
         }
     }
+
+    /**
+     * Broadcast diamond statistics every 1 second (real-time)
+     * Based on official Minecraft statistics: https://minecraft.wiki/w/Statistics
+     */
+    @Scheduled(fixedRate = 1000)
+    fun broadcastDiamondStats() {
+        try {
+            val diamondStats = itemStatsService.getDiamondStats()
+            val update = createLiveUpdate("DIAMOND_STATS", diamondStats)
+            messagingTemplate.convertAndSend("/topic/diamonds", update)
+            logger.debug("Broadcasted diamond stats")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting diamond stats: ${e.message}")
+        }
+    }
 }

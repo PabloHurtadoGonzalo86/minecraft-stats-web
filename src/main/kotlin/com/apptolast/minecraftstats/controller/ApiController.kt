@@ -133,10 +133,17 @@ class ApiController(
     }
     
     // ============== Records Endpoint ==============
-    
+
     @GetMapping("/records")
     fun getServerRecords(): ResponseEntity<ServerRecords> {
         return ResponseEntity.ok(itemStatsService.getServerRecords())
+    }
+
+    // ============== Diamond Statistics Endpoint ==============
+
+    @GetMapping("/diamonds")
+    fun getDiamondStats(): ResponseEntity<DiamondStats> {
+        return ResponseEntity.ok(itemStatsService.getDiamondStats())
     }
 
     @GetMapping("/health")

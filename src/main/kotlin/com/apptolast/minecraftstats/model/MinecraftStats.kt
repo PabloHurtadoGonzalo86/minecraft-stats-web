@@ -392,3 +392,22 @@ data class RecordEntry(
     val formattedValue: String,
     val recordName: String
 )
+
+// ============== Diamond Statistics Models ==============
+
+data class DiamondStats(
+    val totalDiamondOreMined: Long,
+    val totalDeepslateDiamondOreMined: Long,
+    val totalDiamondsPickedUp: Long,
+    val totalDiamondsDropped: Long,
+    val toolsCrafted: Long,
+    val armorCrafted: Long,
+    val toolsBroken: Long,
+    val leaderboard: List<DiamondLeaderboardEntry>
+)
+
+data class DiamondLeaderboardEntry(
+    val playerName: String,
+    val playerUuid: String,
+    val total: Long
+)
