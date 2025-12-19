@@ -269,7 +269,7 @@ class ItemStatsService(
         
         return ServerRecords(
             mostDiamondsMined = serverStats.players
-                .maxByOrNull { it.stats.mined["minecraft:diamond_ore"] ?: 0 + (it.stats.mined["minecraft:deepslate_diamond_ore"] ?: 0) }
+                .maxByOrNull { (it.stats.mined["minecraft:diamond_ore"] ?: 0) + (it.stats.mined["minecraft:deepslate_diamond_ore"] ?: 0) }
                 ?.let { player ->
                     val diamonds = (player.stats.mined["minecraft:diamond_ore"] ?: 0) + 
                                    (player.stats.mined["minecraft:deepslate_diamond_ore"] ?: 0)
