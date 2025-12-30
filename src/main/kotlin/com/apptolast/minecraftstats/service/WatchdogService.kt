@@ -336,90 +336,89 @@ class WatchdogService(
     private fun categorizeDeaths(events: List<LogEntry>): Map<String, Long> {
         val deaths = events.filter { it.type == LogEntryType.DEATH }
 
-        // Known mobs from Minecraft wiki (lowercase for case-insensitive comparison)
-        // Order matters: check compound names first (e.g., "zombie villager" before "zombie")
+        // Known mobs (compound names first for proper matching)
         val knownMobs = listOf(
-            // Compound names first
             "zombified piglin", "zombie villager", "wither skeleton", "magma cube",
             "piglin brute", "elder guardian", "cave spider", "ender dragon", "iron golem",
-            "polar bear",
-            // Single names
-            "zombie", "skeleton", "creeper", "spider", "enderman", "witch", "slime",
-            "phantom", "drowned", "husk", "stray", "blaze", "ghast",
-            "piglin", "hoglin", "zoglin",
-            "pillager", "vindicator", "evoker", "ravager", "vex", "guardian",
-            "shulker", "endermite", "silverfish",
-            "warden", "breeze", "bogged", "bee", "wolf",
-            "llama", "panda", "dolphin", "goat", "fox", "wither"
+            "polar bear", "zombie", "skeleton", "creeper", "spider", "enderman", "witch",
+            "slime", "phantom", "drowned", "husk", "stray", "blaze", "ghast",
+            "piglin", "hoglin", "zoglin", "pillager", "vindicator", "evoker", "ravager",
+            "vex", "guardian", "shulker", "endermite", "silverfish", "warden", "breeze",
+            "bogged", "bee", "wolf", "llama", "panda", "dolphin", "goat", "fox", "wither"
         )
-
-        // Helper to check if message contains a mob
         fun containsMob(msg: String): Boolean = knownMobs.any { mob -> msg.contains(mob) }
 
-        // Count each category separately - MUTUALLY EXCLUSIVE
-        val lavaCount = deaths.count { it.message.contains("lava", ignoreCase = true) }.toLong()
+        // Categorize each death ONCE using priority order
+        var lavaCount = 0L
+        var fallCount = 0L
+        var drownCount = 0L
+        var fireCount = 0L
+        var explosionCount = 0L
+        var suffocationCount = 0L
+        var mobCount = 0L
+        var pvpCount = 0L
+        var otrosCount = 0L
 
-        val fallCount = deaths.count { death ->
+        for (death in deaths) {
             val msg = death.message.lowercase()
-            !msg.contains("lava") &&
-            (msg.contains("fell") || msg.contains("hit the ground") ||
-             msg.contains("cayo") || msg.contains("caída") || msg.contains("condenado a caer"))
-        }.toLong()
 
-        val drownCount = deaths.count { death ->
-            val msg = death.message.lowercase()
-            !msg.contains("lava") &&
-            (msg.contains("drowned") || msg.contains("ahogo") || msg.contains("se ahogo"))
-        }.toLong()
+            // Priority 1: Lava
+            if (msg.contains("lava")) {
+                lavaCount++
+                continue
+            }
 
-        val fireCount = deaths.count { death ->
-            val msg = death.message.lowercase()
-            !msg.contains("lava") &&
-            (msg.contains("fire") || msg.contains("burned") || msg.contains("flames") ||
-             msg.contains("incendio") || msg.contains("quemado") || msg.contains("murio quemado"))
-        }.toLong()
+            // Priority 2: Fall
+            if (msg.contains("fell") || msg.contains("hit the ground") ||
+                msg.contains("cayo") || msg.contains("caída") || msg.contains("condenado a caer")) {
+                fallCount++
+                continue
+            }
 
-        // Explosions: "blew up", "blown up", "explotado", "fue explotado por"
-        val explosionCount = deaths.count { death ->
-            val msg = death.message.lowercase()
-            !msg.contains("lava") &&
-            (msg.contains("blew up") || msg.contains("blown up") ||
-             msg.contains("exploto") || msg.contains("explotado"))
-        }.toLong()
+            // Priority 3: Drown
+            if (msg.contains("drowned") || msg.contains("ahogo") || msg.contains("se ahogo")) {
+                drownCount++
+                continue
+            }
 
-        // Suffocation: "suffocated", "asfixio"
-        val suffocationCount = deaths.count { death ->
-            val msg = death.message.lowercase()
-            msg.contains("suffocated") || msg.contains("asfixio") || msg.contains("se asfixio")
-        }.toLong()
+            // Priority 4: Fire
+            if (msg.contains("fire") || msg.contains("burned") || msg.contains("flames") ||
+                msg.contains("incendio") || msg.contains("quemado")) {
+                fireCount++
+                continue
+            }
 
-        // Mob deaths: message contains attack phrase AND a known mob name
-        // Spanish: "fue asesinado por", "fue disparado por", "fue explotado por"
-        // English: "slain by", "killed by", "shot by"
-        val mobCount = deaths.count { death ->
-            val msg = death.message.lowercase()
-            if (msg.contains("lava")) return@count false
+            // Priority 5: Explosion
+            if (msg.contains("blew up") || msg.contains("blown up") ||
+                msg.contains("exploto") || msg.contains("explotado")) {
+                explosionCount++
+                continue
+            }
+
+            // Priority 6: Suffocation
+            if (msg.contains("suffocated") || msg.contains("asfixio")) {
+                suffocationCount++
+                continue
+            }
+
+            // Priority 7: Check for attack phrase (mob or player)
             val hasAttackPhrase = msg.contains("slain by") || msg.contains("killed by") ||
                                   msg.contains("shot by") || msg.contains("asesinado por") ||
                                   msg.contains("disparado por") || msg.contains("matado por") ||
-                                  msg.contains("explotado por")
-            hasAttackPhrase && containsMob(msg)
-        }.toLong()
+                                  msg.contains("empalado por")
 
-        // PVP deaths: has attack phrase but NO known mob (killed by another player)
-        val pvpCount = deaths.count { death ->
-            val msg = death.message.lowercase()
-            if (msg.contains("lava")) return@count false
-            val hasAttackPhrase = msg.contains("slain by") || msg.contains("killed by") ||
-                                  msg.contains("shot by") || msg.contains("asesinado por") ||
-                                  msg.contains("disparado por") || msg.contains("matado por")
-            // Exclude "explotado por" as that's explosion category
-            hasAttackPhrase && !containsMob(msg) && !msg.contains("explotado")
-        }.toLong()
+            if (hasAttackPhrase) {
+                if (containsMob(msg)) {
+                    mobCount++
+                } else {
+                    pvpCount++
+                }
+                continue
+            }
 
-        // "Otros" is the remainder after all categorized deaths
-        val categorizedCount = lavaCount + fallCount + drownCount + fireCount + explosionCount + suffocationCount + pvpCount + mobCount
-        val otrosCount = (deaths.size.toLong() - categorizedCount).coerceAtLeast(0)
+            // Priority 8: Everything else
+            otrosCount++
+        }
 
         return mapOf(
             "Lava" to lavaCount,
