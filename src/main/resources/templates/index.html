@@ -18,6 +18,13 @@
         @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
         .stat-update { animation: statPulse 0.5s ease-out; }
         @keyframes statPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); color: #22c55e; } 100% { transform: scale(1); } }
+        /* Clock tick animation */
+        .clock-tick { animation: clockTick 0.3s ease-out; }
+        @keyframes clockTick {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); text-shadow: 0 0 10px rgba(34, 197, 94, 0.5); }
+            100% { transform: scale(1); }
+        }
         /* Custom scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -162,7 +169,7 @@
                 <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
                     <h3 class="text-lg font-bold mb-4 flex items-center">
                         <i class="fas fa-heart-crack text-pink-400 mr-2"></i>
-                        💀 Más Muertes
+                        💀 Más Muertes <span class="text-xs text-gray-500 ml-1">(Total)</span>
                     </h3>
                     <ul id="lb-deaths" class="space-y-2">
                         <li class="text-gray-500 text-sm">Cargando...</li>
@@ -562,7 +569,8 @@
             <h2 class="text-2xl font-bold mb-6 flex items-center">
                 <i class="fas fa-shield-alt text-red-500 mr-3"></i>
                 Panel de Vigilancia
-                <span class="ml-3 text-xs text-green-400 live-indicator">● EN VIVO</span>
+                <span class="ml-3 text-xs text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded">Últimos 30 días</span>
+                <span class="ml-2 text-xs text-green-400 live-indicator">● EN VIVO</span>
             </h2>
 
             <!-- Watchdog Totals -->
@@ -611,7 +619,7 @@
                         <p class="text-gray-500 text-sm">Cargando...</p>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-700">
-                        <h4 class="text-sm font-bold mb-2 text-gray-400">Top Muertes por Jugador</h4>
+                        <h4 class="text-sm font-bold mb-2 text-gray-400">Top Muertes por Jugador <span class="text-yellow-400 text-xs">(en logs 30d)</span></h4>
                         <div id="deaths-by-player" class="space-y-1">
                             <p class="text-gray-500 text-sm">Cargando...</p>
                         </div>
@@ -1078,9 +1086,24 @@
         }
         
         // ================= SERVER TIME & STATUS =================
+        let lastTimeValue = '';
         function updateServerTime(serverTime) {
             if (!serverTime) return;
-            document.getElementById('server-time').textContent = serverTime.time;
+            const timeEl = document.getElementById('server-time');
+            const newTime = serverTime.time;
+
+            // Only animate if time actually changed
+            if (timeEl && newTime !== lastTimeValue) {
+                timeEl.textContent = newTime;
+                lastTimeValue = newTime;
+
+                // Add tick animation
+                timeEl.classList.remove('clock-tick');
+                // Force reflow to restart animation
+                void timeEl.offsetWidth;
+                timeEl.classList.add('clock-tick');
+            }
+
             document.getElementById('server-date').textContent = `${serverTime.dayOfWeek}, ${serverTime.date}`;
             document.getElementById('last-update').textContent = serverTime.time;
         }
