@@ -13,7 +13,8 @@ class ApiController(
     private val logService: LogService,
     private val advancementService: AdvancementService,
     private val itemStatsService: ItemStatsService,
-    private val sessionAnalysisService: SessionAnalysisService
+    private val sessionAnalysisService: SessionAnalysisService,
+    private val watchdogService: WatchdogService
 ) {
 
     @GetMapping("/stats")
@@ -149,5 +150,32 @@ class ApiController(
     @GetMapping("/health")
     fun health(): ResponseEntity<Map<String, String>> {
         return ResponseEntity.ok(mapOf("status" to "UP"))
+    }
+
+    // ============== Watchdog / Surveillance Endpoints ==============
+
+    @GetMapping("/watchdog/stats")
+    fun getWatchdogStats(@RequestParam(defaultValue = "30") days: Int): ResponseEntity<ServerWatchStats> {
+        return ResponseEntity.ok(watchdogService.getWatchdogStats(days.coerceIn(1, 90)))
+    }
+
+    @GetMapping("/watchdog/pvp")
+    fun getPvpStats(@RequestParam(defaultValue = "30") days: Int): ResponseEntity<List<PvpLeaderboardEntry>> {
+        return ResponseEntity.ok(watchdogService.getPvpStats(days.coerceIn(1, 90)))
+    }
+
+    @GetMapping("/watchdog/deaths")
+    fun getDeathAnalysis(@RequestParam(defaultValue = "30") days: Int): ResponseEntity<DeathAnalysis> {
+        return ResponseEntity.ok(watchdogService.getDeathAnalysis(days.coerceIn(1, 90)))
+    }
+
+    @GetMapping("/watchdog/player/{uuid}")
+    fun getPlayerWatchProfile(@PathVariable uuid: String): ResponseEntity<PlayerWatchProfile> {
+        val profile = watchdogService.getPlayerWatchProfile(uuid)
+        return if (profile != null) {
+            ResponseEntity.ok(profile)
+        } else {
+            ResponseEntity.notFound().build()
+        }
     }
 }

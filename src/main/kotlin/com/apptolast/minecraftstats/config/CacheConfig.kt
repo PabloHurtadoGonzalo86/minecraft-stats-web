@@ -22,7 +22,9 @@ class CacheConfig {
             // Records cache
             "records",
             // Session & Activity caches
-            "sessions", "activity"
+            "sessions", "activity",
+            // Watchdog caches
+            "watchdogStats"
         )
         cacheManager.setCaffeine(
             Caffeine.newBuilder()

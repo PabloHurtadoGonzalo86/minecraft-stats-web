@@ -557,6 +557,86 @@
             </div>
         </section>
 
+        <!-- Watchdog / Surveillance Panel -->
+        <section class="mb-12" id="watchdog-section">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-shield-alt text-red-500 mr-3"></i>
+                Panel de Vigilancia
+                <span class="ml-3 text-xs text-green-400 live-indicator">● EN VIVO</span>
+            </h2>
+
+            <!-- Watchdog Totals -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-red-900/50 to-red-700/30 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-skull-crossbones text-3xl text-red-400 mb-2"></i>
+                    <p class="text-2xl font-bold text-red-400" id="watchdog-pvp-kills">0</p>
+                    <p class="text-xs text-gray-400">Kills PVP (30d)</p>
+                </div>
+                <div class="bg-gradient-to-br from-orange-900/50 to-orange-700/30 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-ban text-3xl text-orange-400 mb-2"></i>
+                    <p class="text-2xl font-bold text-orange-400" id="watchdog-kicks">0</p>
+                    <p class="text-xs text-gray-400">Kicks (30d)</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-900/50 to-purple-700/30 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-gavel text-3xl text-purple-400 mb-2"></i>
+                    <p class="text-2xl font-bold text-purple-400" id="watchdog-bans">0</p>
+                    <p class="text-xs text-gray-400">Bans (30d)</p>
+                </div>
+                <div class="bg-gradient-to-br from-pink-900/50 to-pink-700/30 rounded-lg p-4 text-center card-hover">
+                    <i class="fas fa-heart-crack text-3xl text-pink-400 mb-2"></i>
+                    <p class="text-2xl font-bold text-pink-400" id="deaths-total">0</p>
+                    <p class="text-xs text-gray-400">Muertes (30d)</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- PVP Leaderboard -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center text-red-400">
+                        <i class="fas fa-crosshairs mr-2"></i>
+                        Leaderboard PVP
+                    </h3>
+                    <div id="pvp-leaderboard" class="space-y-1 max-h-64 overflow-y-auto custom-scroll">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                </div>
+
+                <!-- Death Analysis -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center text-pink-400">
+                        <i class="fas fa-skull mr-2"></i>
+                        Analisis de Muertes
+                    </h3>
+                    <div id="deaths-breakdown" class="space-y-2">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-700">
+                        <h4 class="text-sm font-bold mb-2 text-gray-400">Top Muertes por Jugador</h4>
+                        <div id="deaths-by-player" class="space-y-1">
+                            <p class="text-gray-500 text-sm">Cargando...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts -->
+                <div class="bg-gray-800/50 rounded-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold mb-4 flex items-center text-yellow-400">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Alertas Recientes
+                    </h3>
+                    <div id="watchdog-alerts" class="space-y-2 max-h-48 overflow-y-auto custom-scroll">
+                        <p class="text-gray-500 text-sm">Cargando...</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-700">
+                        <h4 class="text-sm font-bold mb-2 text-orange-400">Jugadores Alto Riesgo</h4>
+                        <div id="watchdog-risk-players" class="space-y-1">
+                            <p class="text-gray-500 text-sm">Cargando...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Live Events Feed -->
         <section class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center">
@@ -680,7 +760,43 @@
                     const update = JSON.parse(message.body);
                     updatePlayerTimes(update.data);
                 });
-                
+
+                // Subscribe to records (every 5s) - makes Records section dynamic
+                stompClient.subscribe('/topic/records', function(message) {
+                    const update = JSON.parse(message.body);
+                    renderRecordsFromWS(update.data);
+                });
+
+                // Subscribe to activity stats (every 10s) - makes Activity section dynamic
+                stompClient.subscribe('/topic/activity', function(message) {
+                    const update = JSON.parse(message.body);
+                    renderActivityFromWS(update.data);
+                });
+
+                // Subscribe to session stats (every 5s) - makes Sessions section dynamic
+                stompClient.subscribe('/topic/sessions', function(message) {
+                    const update = JSON.parse(message.body);
+                    renderSessionsFromWS(update.data);
+                });
+
+                // Subscribe to watchdog stats (every 5s) - makes Watchdog section dynamic
+                stompClient.subscribe('/topic/watchdog', function(message) {
+                    const update = JSON.parse(message.body);
+                    renderWatchdogFromWS(update.data);
+                });
+
+                // Subscribe to PVP stats (every 5s) - makes PVP leaderboard dynamic
+                stompClient.subscribe('/topic/pvp', function(message) {
+                    const update = JSON.parse(message.body);
+                    renderPvpFromWS(update.data);
+                });
+
+                // Subscribe to death analysis (every 10s) - makes Death analysis dynamic
+                stompClient.subscribe('/topic/deaths', function(message) {
+                    const update = JSON.parse(message.body);
+                    renderDeathsFromWS(update.data);
+                });
+
                 // Load all initial data via API
                 loadAllInitialData();
                 
@@ -718,7 +834,8 @@
                     loadDiamondStats(),
                     loadRecords(),
                     loadActivityStats(),
-                    loadSessionStats()
+                    loadSessionStats(),
+                    loadWatchdogStats()
                 ]);
                 
             } catch (e) {
@@ -1088,55 +1205,65 @@
         }
         
         // ================= RECORDS =================
+        function renderRecordsFromWS(records) {
+            if (!records) return;
+            const container = document.getElementById('records-container');
+            if (!container) return;
+
+            const recordsList = [
+                { data: records.mostDiamondsMined, icon: '💎', color: 'cyan' },
+                { data: records.longestBoatDistance, icon: '⛵', color: 'blue' },
+                { data: records.mostMobsKilled, icon: '⚔️', color: 'red' },
+                { data: records.longestPlayTime, icon: '⏱️', color: 'purple' },
+                { data: records.mostBlocksMined, icon: '⛏️', color: 'gray' },
+                { data: records.mostItemsCrafted, icon: '🔨', color: 'orange' },
+                { data: records.mostDeaths, icon: '💀', color: 'pink' },
+                { data: records.mostFishCaught, icon: '🐟', color: 'blue' },
+                { data: records.mostVillagerTrades, icon: '🧑‍🌾', color: 'green' },
+                { data: records.mostJumps, icon: '🦘', color: 'yellow' }
+            ].filter(r => r.data);
+
+            if (recordsList.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">Sin records aún</p>';
+                return;
+            }
+
+            container.innerHTML = recordsList.map(r => `
+                <div class="bg-gray-700/50 rounded-lg p-4 text-center card-hover">
+                    <div class="text-2xl mb-2">${r.icon}</div>
+                    <p class="text-${r.color}-400 font-bold text-lg">${r.data.formattedValue}</p>
+                    <p class="text-xs text-gray-400">${r.data.recordName}</p>
+                    <p class="text-sm text-white mt-1">${r.data.playerName}</p>
+                </div>
+            `).join('');
+        }
+
         async function loadRecords() {
             try {
                 const records = await fetch('/api/records').then(r => r.json());
-                const container = document.getElementById('records-container');
-                if (!container) return;
-                
-                const recordsList = [
-                    { data: records.mostDiamondsMined, icon: '💎', color: 'cyan' },
-                    { data: records.longestBoatDistance, icon: '⛵', color: 'blue' },
-                    { data: records.mostMobsKilled, icon: '⚔️', color: 'red' },
-                    { data: records.longestPlayTime, icon: '⏱️', color: 'purple' },
-                    { data: records.mostBlocksMined, icon: '⛏️', color: 'gray' },
-                    { data: records.mostItemsCrafted, icon: '🔨', color: 'orange' },
-                    { data: records.mostDeaths, icon: '💀', color: 'pink' },
-                    { data: records.mostFishCaught, icon: '🐟', color: 'blue' },
-                    { data: records.mostVillagerTrades, icon: '🧑‍🌾', color: 'green' },
-                    { data: records.mostJumps, icon: '🦘', color: 'yellow' }
-                ].filter(r => r.data);
-                
-                if (recordsList.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500">Sin records aún</p>';
-                    return;
-                }
-                
-                container.innerHTML = recordsList.map(r => `
-                    <div class="bg-gray-700/50 rounded-lg p-4 text-center card-hover">
-                        <div class="text-2xl mb-2">${r.icon}</div>
-                        <p class="text-${r.color}-400 font-bold text-lg">${r.data.formattedValue}</p>
-                        <p class="text-xs text-gray-400">${r.data.recordName}</p>
-                        <p class="text-sm text-white mt-1">${r.data.playerName}</p>
-                    </div>
-                `).join('');
+                renderRecordsFromWS(records);
             } catch (e) {
                 console.error('Error loading records:', e);
             }
         }
         
         // ================= ACTIVITY STATS =================
+        function renderActivityFromWS(activity) {
+            if (!activity) return;
+
+            const el = (id) => document.getElementById(id);
+            if (el('most-active-hour')) el('most-active-hour').textContent = `${activity.mostActiveHour}:00`;
+            if (el('most-active-day')) el('most-active-day').textContent = activity.mostActiveDay;
+            if (el('peak-players')) el('peak-players').textContent = activity.peakPlayers;
+            if (el('peak-players-date')) el('peak-players-date').textContent = activity.peakPlayersDate;
+
+            renderHourlyChart(activity.hourlyActivity);
+        }
+
         async function loadActivityStats() {
             try {
                 const activity = await fetch('/api/activity?days=30').then(r => r.json());
-                
-                const el = (id) => document.getElementById(id);
-                if (el('most-active-hour')) el('most-active-hour').textContent = `${activity.mostActiveHour}:00`;
-                if (el('most-active-day')) el('most-active-day').textContent = activity.mostActiveDay;
-                if (el('peak-players')) el('peak-players').textContent = activity.peakPlayers;
-                if (el('peak-players-date')) el('peak-players-date').textContent = activity.peakPlayersDate;
-                
-                renderHourlyChart(activity.hourlyActivity);
+                renderActivityFromWS(activity);
             } catch (e) {
                 console.error('Error loading activity stats:', e);
             }
@@ -1161,71 +1288,260 @@
         }
         
         // ================= SESSION STATS =================
+        function renderSessionsFromWS(sessions) {
+            if (!sessions) return;
+
+            const el = (id) => document.getElementById(id);
+            if (el('total-sessions')) el('total-sessions').textContent = sessions.totalSessions;
+            if (el('avg-session')) el('avg-session').textContent = sessions.averageSessionFormatted;
+
+            if (sessions.longestSession) {
+                if (el('longest-session')) el('longest-session').textContent = sessions.longestSession.durationFormatted;
+                if (el('longest-session-player')) el('longest-session-player').textContent = sessions.longestSession.playerName;
+            }
+
+            const container = document.getElementById('recent-sessions');
+            if (container && sessions.recentSessions) {
+                if (sessions.recentSessions.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-sm">Sin sesiones recientes</p>';
+                } else {
+                    container.innerHTML = sessions.recentSessions.slice(0, 10).map(s => `
+                        <div class="flex justify-between items-center py-1 border-b border-gray-700/30 text-sm">
+                            <span class="text-white">${s.playerName}</span>
+                            <span class="text-gray-400 text-xs">${s.joinTime}</span>
+                            <span class="${s.durationFormatted === 'En línea' ? 'text-green-400' : 'text-purple-400'} font-mono">
+                                ${s.durationFormatted || '-'}
+                            </span>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
         async function loadSessionStats() {
             try {
                 const sessions = await fetch('/api/sessions?days=30').then(r => r.json());
-                
-                const el = (id) => document.getElementById(id);
-                if (el('total-sessions')) el('total-sessions').textContent = sessions.totalSessions;
-                if (el('avg-session')) el('avg-session').textContent = sessions.averageSessionFormatted;
-                
-                if (sessions.longestSession) {
-                    if (el('longest-session')) el('longest-session').textContent = sessions.longestSession.durationFormatted;
-                    if (el('longest-session-player')) el('longest-session-player').textContent = sessions.longestSession.playerName;
-                }
-                
-                const container = document.getElementById('recent-sessions');
-                if (container && sessions.recentSessions) {
-                    if (sessions.recentSessions.length === 0) {
-                        container.innerHTML = '<p class="text-gray-500 text-sm">Sin sesiones recientes</p>';
-                    } else {
-                        container.innerHTML = sessions.recentSessions.slice(0, 10).map(s => `
-                            <div class="flex justify-between items-center py-1 border-b border-gray-700/30 text-sm">
-                                <span class="text-white">${s.playerName}</span>
-                                <span class="text-gray-400 text-xs">${s.joinTime}</span>
-                                <span class="${s.durationFormatted === 'En línea' ? 'text-green-400' : 'text-purple-400'} font-mono">
-                                    ${s.durationFormatted || '-'}
-                                </span>
-                            </div>
-                        `).join('');
-                    }
-                }
+                renderSessionsFromWS(sessions);
             } catch (e) {
                 console.error('Error loading session stats:', e);
             }
         }
-        
+
+        // ================= WATCHDOG / SURVEILLANCE =================
+        async function loadWatchdogStats() {
+            try {
+                const [watchdog, pvp, deaths] = await Promise.all([
+                    fetch('/api/watchdog/stats?days=30').then(r => r.json()),
+                    fetch('/api/watchdog/pvp?days=30').then(r => r.json()),
+                    fetch('/api/watchdog/deaths?days=30').then(r => r.json())
+                ]);
+                renderWatchdogFromWS(watchdog);
+                renderPvpFromWS(pvp);
+                renderDeathsFromWS(deaths);
+            } catch (e) {
+                console.error('Error loading watchdog stats:', e);
+            }
+        }
+
+        function renderWatchdogFromWS(data) {
+            if (!data) return;
+
+            // Update totals
+            animateStat('watchdog-pvp-kills', formatNumber(data.totalPvpKills || 0));
+            animateStat('watchdog-kicks', formatNumber(data.totalKicks || 0));
+            animateStat('watchdog-bans', formatNumber(data.totalBans || 0));
+
+            // Render alerts
+            const alertsContainer = document.getElementById('watchdog-alerts');
+            if (alertsContainer && data.recentAlerts) {
+                if (data.recentAlerts.length === 0) {
+                    alertsContainer.innerHTML = '<p class="text-gray-500 text-sm">Sin alertas recientes</p>';
+                } else {
+                    alertsContainer.innerHTML = data.recentAlerts.slice(0, 15).map(alert => {
+                        const severityColors = {
+                            'LOW': 'text-blue-400 bg-blue-900/30',
+                            'MEDIUM': 'text-yellow-400 bg-yellow-900/30',
+                            'HIGH': 'text-orange-400 bg-orange-900/30',
+                            'CRITICAL': 'text-red-400 bg-red-900/30'
+                        };
+                        const severityIcons = {
+                            'LOW': 'info-circle',
+                            'MEDIUM': 'exclamation-triangle',
+                            'HIGH': 'exclamation-circle',
+                            'CRITICAL': 'skull-crossbones'
+                        };
+                        const typeIcons = {
+                            'PVP_KILL': 'crossed-swords',
+                            'KICK': 'ban',
+                            'BAN': 'gavel',
+                            'LAVA_DEATHS': 'fire',
+                            'FALL_DEATHS': 'arrow-down',
+                            'LONG_SESSION': 'clock'
+                        };
+                        const color = severityColors[alert.severity] || 'text-gray-400 bg-gray-900/30';
+                        const icon = severityIcons[alert.severity] || 'info-circle';
+
+                        return `
+                            <div class="flex items-start gap-2 p-2 rounded ${color} text-sm">
+                                <i class="fas fa-${icon} mt-0.5"></i>
+                                <div class="flex-1">
+                                    <span class="font-bold">${alert.playerName}</span>
+                                    <span class="text-gray-300">- ${alert.description}</span>
+                                    <div class="text-xs text-gray-500">${alert.timestamp}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // Render high risk players
+            const riskContainer = document.getElementById('watchdog-risk-players');
+            if (riskContainer && data.highRiskPlayers) {
+                if (data.highRiskPlayers.length === 0) {
+                    riskContainer.innerHTML = '<p class="text-gray-500 text-sm">Sin jugadores de alto riesgo</p>';
+                } else {
+                    riskContainer.innerHTML = data.highRiskPlayers.slice(0, 5).map(player => {
+                        const riskColor = player.riskScore >= 70 ? 'text-red-400' :
+                                         player.riskScore >= 40 ? 'text-orange-400' : 'text-yellow-400';
+                        return `
+                            <div class="flex items-center justify-between py-1 border-b border-gray-700/30">
+                                <span>${player.name}</span>
+                                <span class="${riskColor} font-mono">${player.riskScore}%</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        function renderPvpFromWS(data) {
+            if (!data) return;
+
+            const container = document.getElementById('pvp-leaderboard');
+            if (!container) return;
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Sin datos PVP</p>';
+                return;
+            }
+
+            container.innerHTML = data.slice(0, 10).map((entry, i) => {
+                const medals = ['text-yellow-400', 'text-gray-400', 'text-orange-600'];
+                const rankClass = medals[i] || 'text-gray-500';
+                const kdColor = entry.kd >= 2 ? 'text-green-400' :
+                               entry.kd >= 1 ? 'text-yellow-400' : 'text-red-400';
+
+                return `
+                    <div class="flex items-center justify-between py-2 border-b border-gray-700/30 last:border-0">
+                        <div class="flex items-center gap-2">
+                            <span class="${rankClass} w-6 font-bold">#${i+1}</span>
+                            <span>${entry.playerName}</span>
+                        </div>
+                        <div class="flex gap-4 text-sm">
+                            <span class="text-red-400">${entry.kills} <i class="fas fa-skull text-xs"></i></span>
+                            <span class="text-gray-400">${entry.deaths} <i class="fas fa-heart-crack text-xs"></i></span>
+                            <span class="${kdColor} font-mono">${entry.kd.toFixed(2)} K/D</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDeathsFromWS(data) {
+            if (!data) return;
+
+            // Update total deaths
+            animateStat('deaths-total', formatNumber(data.totalDeaths || 0));
+
+            // Death breakdown
+            const deathTypes = [
+                { key: 'lavaDeaths', label: 'Lava', icon: 'fire', color: 'orange' },
+                { key: 'fallDeaths', label: 'Caida', icon: 'arrow-down', color: 'blue' },
+                { key: 'pvpDeaths', label: 'PVP', icon: 'skull-crossbones', color: 'red' },
+                { key: 'mobDeaths', label: 'Mobs', icon: 'spider', color: 'purple' },
+                { key: 'environmentDeaths', label: 'Ambiente', icon: 'tree', color: 'green' }
+            ];
+
+            const breakdownContainer = document.getElementById('deaths-breakdown');
+            if (breakdownContainer) {
+                const totalDeaths = data.totalDeaths || 1;
+                breakdownContainer.innerHTML = deathTypes.map(dt => {
+                    const count = data[dt.key] || 0;
+                    const percentage = ((count / totalDeaths) * 100).toFixed(1);
+                    return `
+                        <div class="flex items-center justify-between py-1">
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-${dt.icon} text-${dt.color}-400"></i>
+                                <span>${dt.label}</span>
+                            </span>
+                            <span class="text-${dt.color}-400 font-mono">${formatNumber(count)} (${percentage}%)</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Deaths by player
+            const byPlayerContainer = document.getElementById('deaths-by-player');
+            if (byPlayerContainer && data.deathsByPlayer) {
+                const entries = Object.entries(data.deathsByPlayer)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                if (entries.length === 0) {
+                    byPlayerContainer.innerHTML = '<p class="text-gray-500 text-sm">Sin datos</p>';
+                } else {
+                    byPlayerContainer.innerHTML = entries.map(([name, count], i) => `
+                        <div class="flex items-center justify-between py-1 border-b border-gray-700/30 last:border-0">
+                            <span>${['💀', '☠️', '👻', '⚰️', '🪦'][i] || '•'} ${name}</span>
+                            <span class="text-pink-400 font-mono">${count}</span>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
         // ================= EVENTS =================
         function addEvent(event, serverTime) {
             const feed = document.getElementById('events-feed');
             if (!feed) return;
-            
+
             const firstChild = feed.firstElementChild;
             if (firstChild && firstChild.textContent.includes('Esperando')) {
                 feed.innerHTML = '';
             }
-            
-            let icon, color;
-            switch(event.type) {
-                case 'JOIN': icon = 'sign-in-alt'; color = 'green'; break;
-                case 'LEAVE': icon = 'sign-out-alt'; color = 'red'; break;
-                case 'DEATH': icon = 'skull'; color = 'pink'; break;
-                case 'ADVANCEMENT': icon = 'trophy'; color = 'yellow'; break;
-                case 'CHAT': icon = 'comment'; color = 'blue'; break;
-                default: icon = 'info-circle'; color = 'gray';
-            }
-            
+
+            // Extended event type support
+            const eventConfig = {
+                'JOIN': { icon: 'sign-in-alt', color: 'green', label: 'Conexion' },
+                'LEAVE': { icon: 'sign-out-alt', color: 'red', label: 'Desconexion' },
+                'DEATH': { icon: 'skull', color: 'pink', label: 'Muerte' },
+                'ADVANCEMENT': { icon: 'trophy', color: 'yellow', label: 'Logro' },
+                'CHAT': { icon: 'comment', color: 'blue', label: 'Chat' },
+                'PVP_KILL': { icon: 'skull-crossbones', color: 'red', label: 'PVP Kill' },
+                'KICK': { icon: 'ban', color: 'orange', label: 'Kick' },
+                'BAN': { icon: 'gavel', color: 'red', label: 'Ban' },
+                'COMMAND': { icon: 'terminal', color: 'cyan', label: 'Comando' },
+                'WARNING': { icon: 'exclamation-triangle', color: 'yellow', label: 'Warning' },
+                'SERVER_START': { icon: 'play-circle', color: 'green', label: 'Server Start' },
+                'SERVER_STOP': { icon: 'stop-circle', color: 'red', label: 'Server Stop' },
+                'WORLD_SAVE': { icon: 'save', color: 'blue', label: 'World Save' },
+                'OTHER': { icon: 'info-circle', color: 'gray', label: 'Otro' }
+            };
+
+            const config = eventConfig[event.type] || eventConfig['OTHER'];
             const dateTime = event.fullDateTime || event.timestamp;
+
             const eventHtml = `
                 <div class="flex items-start space-x-2 py-1 event-enter border-b border-gray-700/50 last:border-0">
-                    <span class="text-${color}-400 w-5"><i class="fas fa-${icon}"></i></span>
+                    <span class="text-${config.color}-400 w-5" title="${config.label}"><i class="fas fa-${config.icon}"></i></span>
                     <span class="text-gray-500 text-xs whitespace-nowrap">${dateTime}</span>
                     <span class="text-sm flex-1">${event.message}</span>
                 </div>
             `;
-            
+
             feed.insertAdjacentHTML('afterbegin', eventHtml);
-            while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+            while (feed.children.length > 30) feed.removeChild(feed.lastChild);
         }
         
         function addChatMessage(event) {

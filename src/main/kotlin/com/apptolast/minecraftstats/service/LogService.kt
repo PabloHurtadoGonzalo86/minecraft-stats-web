@@ -16,20 +16,129 @@ import java.util.zip.GZIPInputStream
 
 /**
  * Service for parsing Minecraft server logs
+ * Based on Minecraft server log format and death messages:
+ * https://minecraft.fandom.com/wiki/Death_messages
  */
 @Service
 class LogService(
     private val properties: MinecraftProperties
 ) {
     private val logger = LoggerFactory.getLogger(LogService::class.java)
-    
+
     // Regex patterns for parsing log entries
     private val timestampPattern = Regex("""\[(\d{2}:\d{2}:\d{2})\]""")
     private val chatPattern = Regex("""\[Server thread/INFO\]: \[Not Secure\] <(\w+)> (.+)""")
     private val joinPattern = Regex("""\[Server thread/INFO\]: (\w+)\[.+\] logged in""")
     private val leavePattern = Regex("""\[Server thread/INFO\]: (\w+) left the game""")
-    private val deathPattern = Regex("""\[Server thread/INFO\]: (\w+) (was slain|was killed|drowned|fell|burned|starved|died|blew up|hit the ground|went up in flames|walked into|tried to swim|was shot|was pummeled|was fireballed|was impaled|was squashed|was skewered|was pricked|suffocated|experienced kinetic|was blown up|was struck|withered)""")
     private val advancementPattern = Regex("""\[Server thread/INFO\]: (\w+) has (made the advancement|completed the challenge|reached the goal) \[(.+)\]""")
+
+    // NEW patterns for additional events
+    private val commandPattern = Regex("""\[Server thread/INFO\]: (\w+) issued server command: /(.+)""")
+    private val kickPattern = Regex("""\[Server thread/INFO\]: Kicked (\w+):?\s*(.*)""")
+    private val banPattern = Regex("""\[Server thread/INFO\]: Banned (\w+):?\s*(.*)""")
+    private val serverStartPattern = Regex("""\[Server thread/INFO\]: Done \([\d.]+s\)! For help, type "help"""")
+    private val serverStopPattern = Regex("""\[Server thread/INFO\]: Stopping (the )?server""")
+    private val worldSavePattern = Regex("""\[Server thread/INFO\]: Saved the (game|world)""")
+    private val warningPattern = Regex("""\[Server thread/WARN\]: (.+)""")
+
+    // PVP kill pattern - Player was slain/killed by another player
+    private val pvpKillPattern = Regex("""\[Server thread/INFO\]: (\w+) was (slain|killed|shot) by (\w+)""")
+
+    // Comprehensive death patterns based on https://minecraft.fandom.com/wiki/Death_messages
+    private val deathPatterns = listOf(
+        // Generic death
+        Regex("""(\w+) died"""),
+        Regex("""(\w+) was killed"""),
+
+        // Combat - Melee
+        Regex("""(\w+) was slain by (.+)"""),
+        Regex("""(\w+) was killed by (.+)"""),
+        Regex("""(\w+) got finished off by (.+)"""),
+
+        // Combat - Ranged
+        Regex("""(\w+) was shot by (.+)"""),
+        Regex("""(\w+) was fireballed by (.+)"""),
+        Regex("""(\w+) was pummeled by (.+)"""),
+        Regex("""(\w+) was impaled by (.+)"""),
+        Regex("""(\w+) was skewered by (.+)"""),
+
+        // Fall damage
+        Regex("""(\w+) hit the ground too hard"""),
+        Regex("""(\w+) fell from a high place"""),
+        Regex("""(\w+) fell off a ladder"""),
+        Regex("""(\w+) fell off some vines"""),
+        Regex("""(\w+) fell off scaffolding"""),
+        Regex("""(\w+) fell off some weeping vines"""),
+        Regex("""(\w+) fell off some twisting vines"""),
+        Regex("""(\w+) fell while climbing"""),
+        Regex("""(\w+) was doomed to fall"""),
+        Regex("""(\w+) fell too far and was finished by (.+)"""),
+
+        // Drowning
+        Regex("""(\w+) drowned"""),
+        Regex("""(\w+) drowned whilst trying to escape (.+)"""),
+
+        // Fire/Lava
+        Regex("""(\w+) went up in flames"""),
+        Regex("""(\w+) burned to death"""),
+        Regex("""(\w+) was burnt to a crisp whilst fighting (.+)"""),
+        Regex("""(\w+) walked into fire whilst fighting (.+)"""),
+        Regex("""(\w+) tried to swim in lava"""),
+        Regex("""(\w+) tried to swim in lava to escape (.+)"""),
+
+        // Explosions
+        Regex("""(\w+) blew up"""),
+        Regex("""(\w+) was blown up by (.+)"""),
+        Regex("""(\w+) was killed by \[Intentional Game Design\]"""),
+
+        // Suffocation/Crushing
+        Regex("""(\w+) suffocated in a wall"""),
+        Regex("""(\w+) was squished too much"""),
+        Regex("""(\w+) was squashed by (.+)"""),
+
+        // Environment
+        Regex("""(\w+) was pricked to death"""),
+        Regex("""(\w+) walked into a cactus whilst trying to escape (.+)"""),
+        Regex("""(\w+) was struck by lightning"""),
+        Regex("""(\w+) discovered the floor was lava"""),
+        Regex("""(\w+) froze to death"""),
+        Regex("""(\w+) was frozen to death by (.+)"""),
+        Regex("""(\w+) was stung to death"""),
+        Regex("""(\w+) was obliterated by a sonically-charged shriek"""),
+
+        // Starvation
+        Regex("""(\w+) starved to death"""),
+
+        // Magic/Wither
+        Regex("""(\w+) was killed by magic"""),
+        Regex("""(\w+) was killed by (.+) using magic"""),
+        Regex("""(\w+) withered away"""),
+        Regex("""(\w+) withered away whilst fighting (.+)"""),
+
+        // Kinetic energy (elytra crash)
+        Regex("""(\w+) experienced kinetic energy"""),
+        Regex("""(\w+) experienced kinetic energy whilst trying to escape (.+)"""),
+
+        // Void
+        Regex("""(\w+) fell out of the world"""),
+        Regex("""(\w+) didn't want to live in the same world as (.+)"""),
+
+        // Thorns
+        Regex("""(\w+) was killed trying to hurt (.+)"""),
+
+        // Anvil/Stalactite
+        Regex("""(\w+) was squashed by a falling anvil"""),
+        Regex("""(\w+) was squashed by a falling anvil whilst fighting (.+)"""),
+        Regex("""(\w+) was skewered by a falling stalactite"""),
+        Regex("""(\w+) was impaled on a stalagmite"""),
+
+        // Warden
+        Regex("""(\w+) was obliterated by a sonically-charged shriek whilst trying to escape (.+)"""),
+
+        // Firework
+        Regex("""(\w+) went off with a bang"""),
+        Regex("""(\w+) went off with a bang due to a firework fired from (.+) by (.+)""")
+    )
     
     // Date pattern from log filenames: 2025-12-12-1.log.gz
     private val logFileDatePattern = Regex("""(\d{4}-\d{2}-\d{2})-\d+\.log\.gz""")
@@ -168,7 +277,7 @@ class LogService(
     
     private fun parseLogLine(line: String, logDate: LocalDate = LocalDate.now()): LogEntry? {
         val timestamp = timestampPattern.find(line)?.groupValues?.get(1) ?: return null
-        
+
         // Create full date/time from log date + log timestamp
         val logTime = try {
             LocalTime.parse(timestamp, DateTimeFormatter.ofPattern("HH:mm:ss"))
@@ -178,7 +287,7 @@ class LogService(
         val fullDateTime = LocalDateTime.of(logDate, logTime)
         val fullDateTimeStr = fullDateTime.format(fullDateFormatter)
         val dateStr = logDate.format(dateOnlyFormatter)
-        
+
         // Check for chat message
         chatPattern.find(line)?.let { match ->
             return LogEntry(
@@ -191,7 +300,7 @@ class LogService(
                 rawLine = line
             )
         }
-        
+
         // Check for player join
         joinPattern.find(line)?.let { match ->
             return LogEntry(
@@ -204,7 +313,7 @@ class LogService(
                 rawLine = line
             )
         }
-        
+
         // Check for player leave
         leavePattern.find(line)?.let { match ->
             return LogEntry(
@@ -217,20 +326,40 @@ class LogService(
                 rawLine = line
             )
         }
-        
-        // Check for death
-        deathPattern.find(line)?.let { match ->
-            return LogEntry(
-                timestamp = timestamp,
-                fullDateTime = fullDateTimeStr,
-                date = dateStr,
-                type = LogEntryType.DEATH,
-                playerName = match.groupValues[1],
-                message = line.substringAfter("INFO]: "),
-                rawLine = line
-            )
+
+        // Check for PVP kill first (player killed by another player)
+        pvpKillPattern.find(line)?.let { match ->
+            val victim = match.groupValues[1]
+            val killer = match.groupValues[3]
+            // Check if killer is a player name (not a mob)
+            if (killer.first().isUpperCase() && !killer.contains("_")) {
+                return LogEntry(
+                    timestamp = timestamp,
+                    fullDateTime = fullDateTimeStr,
+                    date = dateStr,
+                    type = LogEntryType.PVP_KILL,
+                    playerName = killer,
+                    message = "$killer ha matado a $victim",
+                    rawLine = line
+                )
+            }
         }
-        
+
+        // Check for death using comprehensive patterns
+        for (pattern in deathPatterns) {
+            pattern.find(line.substringAfter("INFO]: ", ""))?.let { match ->
+                return LogEntry(
+                    timestamp = timestamp,
+                    fullDateTime = fullDateTimeStr,
+                    date = dateStr,
+                    type = LogEntryType.DEATH,
+                    playerName = match.groupValues[1],
+                    message = translateDeathMessage(line.substringAfter("INFO]: ")),
+                    rawLine = line
+                )
+            }
+        }
+
         // Check for advancement
         advancementPattern.find(line)?.let { match ->
             return LogEntry(
@@ -243,7 +372,98 @@ class LogService(
                 rawLine = line
             )
         }
-        
+
+        // Check for server command
+        commandPattern.find(line)?.let { match ->
+            return LogEntry(
+                timestamp = timestamp,
+                fullDateTime = fullDateTimeStr,
+                date = dateStr,
+                type = LogEntryType.COMMAND,
+                playerName = match.groupValues[1],
+                message = "${match.groupValues[1]} ejecuto /${match.groupValues[2]}",
+                rawLine = line
+            )
+        }
+
+        // Check for kick
+        kickPattern.find(line)?.let { match ->
+            return LogEntry(
+                timestamp = timestamp,
+                fullDateTime = fullDateTimeStr,
+                date = dateStr,
+                type = LogEntryType.KICK,
+                playerName = match.groupValues[1],
+                message = "${match.groupValues[1]} fue expulsado${if (match.groupValues[2].isNotBlank()) ": ${match.groupValues[2]}" else ""}",
+                rawLine = line
+            )
+        }
+
+        // Check for ban
+        banPattern.find(line)?.let { match ->
+            return LogEntry(
+                timestamp = timestamp,
+                fullDateTime = fullDateTimeStr,
+                date = dateStr,
+                type = LogEntryType.BAN,
+                playerName = match.groupValues[1],
+                message = "${match.groupValues[1]} fue baneado${if (match.groupValues[2].isNotBlank()) ": ${match.groupValues[2]}" else ""}",
+                rawLine = line
+            )
+        }
+
+        // Check for server start
+        if (serverStartPattern.containsMatchIn(line)) {
+            return LogEntry(
+                timestamp = timestamp,
+                fullDateTime = fullDateTimeStr,
+                date = dateStr,
+                type = LogEntryType.SERVER_START,
+                playerName = null,
+                message = "Servidor iniciado",
+                rawLine = line
+            )
+        }
+
+        // Check for server stop
+        if (serverStopPattern.containsMatchIn(line)) {
+            return LogEntry(
+                timestamp = timestamp,
+                fullDateTime = fullDateTimeStr,
+                date = dateStr,
+                type = LogEntryType.SERVER_STOP,
+                playerName = null,
+                message = "Servidor detenido",
+                rawLine = line
+            )
+        }
+
+        // Check for world save
+        if (worldSavePattern.containsMatchIn(line)) {
+            return LogEntry(
+                timestamp = timestamp,
+                fullDateTime = fullDateTimeStr,
+                date = dateStr,
+                type = LogEntryType.WORLD_SAVE,
+                playerName = null,
+                message = "Mundo guardado",
+                rawLine = line
+            )
+        }
+
+        // Check for warnings
+        warningPattern.find(line)?.let { match ->
+            return LogEntry(
+                timestamp = timestamp,
+                fullDateTime = fullDateTimeStr,
+                date = dateStr,
+                type = LogEntryType.WARNING,
+                playerName = null,
+                message = match.groupValues[1],
+                rawLine = line
+            )
+        }
+
         return LogEntry(
             timestamp = timestamp,
             fullDateTime = fullDateTimeStr,
@@ -253,5 +473,35 @@ class LogService(
             message = line.substringAfter("INFO]: ", line),
             rawLine = line
         )
+    }
+
+    /**
+     * Translate death messages to Spanish
+     */
+    private fun translateDeathMessage(message: String): String {
+        return message
+            .replace("was slain by", "fue asesinado por")
+            .replace("was killed by", "fue matado por")
+            .replace("was shot by", "fue disparado por")
+            .replace("was fireballed by", "fue boleado por")
+            .replace("drowned", "se ahogo")
+            .replace("fell from a high place", "cayo desde un lugar alto")
+            .replace("hit the ground too hard", "golpeo el suelo muy fuerte")
+            .replace("went up in flames", "se incendio")
+            .replace("burned to death", "murio quemado")
+            .replace("tried to swim in lava", "intento nadar en lava")
+            .replace("suffocated in a wall", "se asfixio en una pared")
+            .replace("starved to death", "murio de hambre")
+            .replace("withered away", "se marchito")
+            .replace("was struck by lightning", "fue alcanzado por un rayo")
+            .replace("froze to death", "murio congelado")
+            .replace("fell out of the world", "cayo al vacio")
+            .replace("blew up", "exploto")
+            .replace("was blown up by", "fue explotado por")
+            .replace("experienced kinetic energy", "experimento energia cinetica")
+            .replace("was pricked to death", "murio pinchado")
+            .replace("was squashed", "fue aplastado")
+            .replace("was impaled", "fue empalado")
+            .replace("died", "murio")
     }
 }

@@ -99,6 +99,10 @@ class StatsService(
         }
     }
     
+    /**
+     * Extract detailed stats from minecraft:custom category
+     * Based on official Minecraft statistics: https://minecraft.wiki/w/Statistics
+     */
     private fun extractDetailedStats(stats: StatsCategories): DetailedPlayerStats {
         val custom = stats.custom
         return DetailedPlayerStats(
@@ -107,7 +111,13 @@ class StatsService(
             damageTaken = custom["minecraft:damage_taken"] ?: 0L,
             damageBlocked = custom["minecraft:damage_blocked_by_shield"] ?: 0L,
             playerKills = custom["minecraft:player_kills"] ?: 0L,
-            
+            mobKills = custom["minecraft:mob_kills"] ?: 0L,
+            // NEW: Detailed damage stats from official wiki
+            damageDealtAbsorbed = custom["minecraft:damage_dealt_absorbed"] ?: 0L,
+            damageDealtResisted = custom["minecraft:damage_dealt_resisted"] ?: 0L,
+            damageAbsorbed = custom["minecraft:damage_absorbed"] ?: 0L,
+            damageResisted = custom["minecraft:damage_resisted"] ?: 0L,
+
             // Movement (all in cm)
             walkDistance = custom["minecraft:walk_one_cm"] ?: 0L,
             sprintDistance = custom["minecraft:sprint_one_cm"] ?: 0L,
@@ -123,9 +133,17 @@ class StatsService(
             crouchDistance = custom["minecraft:crouch_one_cm"] ?: 0L,
             walkOnWaterDistance = custom["minecraft:walk_on_water_one_cm"] ?: 0L,
             walkUnderWaterDistance = custom["minecraft:walk_under_water_one_cm"] ?: 0L,
-            
-            // Interactions
+            // NEW: From official wiki
+            minecartDistance = custom["minecraft:minecart_one_cm"] ?: 0L,
+
+            // Interactions - Containers (NEW from official wiki)
             chestsOpened = custom["minecraft:open_chest"] ?: 0L,
+            enderChestsOpened = custom["minecraft:open_enderchest"] ?: 0L,
+            barrelsOpened = custom["minecraft:open_barrel"] ?: 0L,
+            shulkerBoxesOpened = custom["minecraft:open_shulker_box"] ?: 0L,
+            trappedChestsTriggered = custom["minecraft:trigger_trapped_chest"] ?: 0L,
+
+            // Interactions - Workstations
             craftingTableUses = custom["minecraft:interact_with_crafting_table"] ?: 0L,
             furnaceUses = custom["minecraft:interact_with_furnace"] ?: 0L,
             anvilUses = custom["minecraft:interact_with_anvil"] ?: 0L,
@@ -136,7 +154,13 @@ class StatsService(
             stonecutterUses = custom["minecraft:interact_with_stonecutter"] ?: 0L,
             smokerUses = custom["minecraft:interact_with_smoker"] ?: 0L,
             blastFurnaceUses = custom["minecraft:interact_with_blast_furnace"] ?: 0L,
-            
+            // NEW workstations from official wiki
+            campfireUses = custom["minecraft:interact_with_campfire"] ?: 0L,
+            cartographyTableUses = custom["minecraft:interact_with_cartography_table"] ?: 0L,
+            loomUses = custom["minecraft:interact_with_loom"] ?: 0L,
+            grindstoneUses = custom["minecraft:interact_with_grindstone"] ?: 0L,
+            lecternUses = custom["minecraft:interact_with_lectern"] ?: 0L,
+
             // Actions
             timesSlept = custom["minecraft:sleep_in_bed"] ?: 0L,
             sneakTime = custom["minecraft:sneak_time"] ?: 0L,
@@ -148,11 +172,23 @@ class StatsService(
             raidWins = custom["minecraft:raid_win"] ?: 0L,
             raidTriggers = custom["minecraft:raid_trigger"] ?: 0L,
             targetsHit = custom["minecraft:target_hit"] ?: 0L,
-            
+            // NEW actions from official wiki
+            noteBlocksPlayed = custom["minecraft:play_noteblock"] ?: 0L,
+            noteBlocksTuned = custom["minecraft:tune_noteblock"] ?: 0L,
+            cakeSlicesEaten = custom["minecraft:eat_cake_slice"] ?: 0L,
+            cauldronsUsed = custom["minecraft:use_cauldron"] ?: 0L,
+            cauldronsFilled = custom["minecraft:fill_cauldron"] ?: 0L,
+            flowersPotted = custom["minecraft:pot_flower"] ?: 0L,
+            armorCleaned = custom["minecraft:clean_armor"] ?: 0L,
+            bannersCleaned = custom["minecraft:clean_banner"] ?: 0L,
+            shulkerBoxesCleaned = custom["minecraft:clean_shulker_box"] ?: 0L,
+            gamesLeft = custom["minecraft:leave_game"] ?: 0L,
+            itemsDropped = custom["minecraft:drop"] ?: 0L,
+
             // Villagers
             villagersTraded = custom["minecraft:traded_with_villager"] ?: 0L,
             villagersTalked = custom["minecraft:talked_to_villager"] ?: 0L,
-            
+
             // Time-based
             timeSinceRest = custom["minecraft:time_since_rest"] ?: 0L,
             timeSinceDeath = custom["minecraft:time_since_death"] ?: 0L,
@@ -212,12 +248,22 @@ class StatsService(
             mostDeaths = buildLeaderboard(players, "muertes") { it.summary.totalDeaths },
             mostDistanceWalked = buildLeaderboard(players, "") { it.summary.distanceWalkedCm }
                 .map { it.copy(formattedValue = formatDistance(it.value)) },
-            // New leaderboards
+            // Existing leaderboards
             mostItemsCrafted = buildLeaderboard(players, "items crafteados") { it.summary.totalItemsCrafted },
             mostDamageDealt = buildLeaderboard(players, "daño") { it.detailedStats?.damageDealt ?: 0L },
             mostJumps = buildLeaderboard(players, "saltos") { it.summary.jumps },
             mostFishCaught = buildLeaderboard(players, "peces") { it.detailedStats?.fishCaught ?: 0L },
-            mostVillagerTrades = buildLeaderboard(players, "comercios") { it.detailedStats?.villagersTraded ?: 0L }
+            mostVillagerTrades = buildLeaderboard(players, "comercios") { it.detailedStats?.villagersTraded ?: 0L },
+            // NEW leaderboards from official wiki stats
+            mostAnimalsBreed = buildLeaderboard(players, "animales criados") { it.detailedStats?.animalsBreed ?: 0L },
+            mostDamageBlocked = buildLeaderboard(players, "daño bloqueado") { it.detailedStats?.damageBlocked ?: 0L },
+            mostEnderChestsOpened = buildLeaderboard(players, "ender chests") { it.detailedStats?.enderChestsOpened ?: 0L },
+            mostMinecartDistance = buildLeaderboard(players, "") { it.detailedStats?.minecartDistance ?: 0L }
+                .map { it.copy(formattedValue = formatDistance(it.value)) },
+            mostCakeSlicesEaten = buildLeaderboard(players, "trozos de tarta") { it.detailedStats?.cakeSlicesEaten ?: 0L },
+            mostRaidWins = buildLeaderboard(players, "redadas ganadas") { it.detailedStats?.raidWins ?: 0L },
+            mostItemsEnchanted = buildLeaderboard(players, "items encantados") { it.detailedStats?.itemsEnchanted ?: 0L },
+            mostItemsDropped = buildLeaderboard(players, "items dropeados") { it.detailedStats?.itemsDropped ?: 0L }
         )
     }
 
@@ -248,19 +294,33 @@ class StatsService(
         val totalDeaths = players.sumOf { it.summary.totalDeaths }
         val totalPlayTimeTicks = players.sumOf { it.summary.playTimeTicks }
         val totalDamageDealt = players.sumOf { it.detailedStats?.damageDealt ?: 0L }
-        val totalDistanceTraveled = players.sumOf { 
+        val totalDistanceTraveled = players.sumOf {
             val d = it.detailedStats
-            (d?.walkDistance ?: 0L) + (d?.sprintDistance ?: 0L) + (d?.swimDistance ?: 0L) + 
-            (d?.boatDistance ?: 0L) + (d?.horseDistance ?: 0L) + (d?.flyDistance ?: 0L)
+            (d?.walkDistance ?: 0L) + (d?.sprintDistance ?: 0L) + (d?.swimDistance ?: 0L) +
+            (d?.boatDistance ?: 0L) + (d?.horseDistance ?: 0L) + (d?.flyDistance ?: 0L) +
+            (d?.minecartDistance ?: 0L) + (d?.elytraDistance ?: 0L)
         }
         val totalChestsOpened = players.sumOf { it.detailedStats?.chestsOpened ?: 0L }
-        
-        // New totals
+
+        // Existing totals
         val totalJumps = players.sumOf { it.summary.jumps }
         val totalFishCaught = players.sumOf { it.detailedStats?.fishCaught ?: 0L }
         val totalAnimalsBred = players.sumOf { it.detailedStats?.animalsBreed ?: 0L }
         val totalVillagerTrades = players.sumOf { it.detailedStats?.villagersTraded ?: 0L }
         val totalTimesSlept = players.sumOf { it.detailedStats?.timesSlept ?: 0L }
+
+        // NEW totals from official wiki
+        val totalMobKills = players.sumOf { it.detailedStats?.mobKills ?: 0L }
+        val totalEnderChestsOpened = players.sumOf { it.detailedStats?.enderChestsOpened ?: 0L }
+        val totalBarrelsOpened = players.sumOf { it.detailedStats?.barrelsOpened ?: 0L }
+        val totalShulkerBoxesOpened = players.sumOf { it.detailedStats?.shulkerBoxesOpened ?: 0L }
+        val totalMinecartDistance = players.sumOf { it.detailedStats?.minecartDistance ?: 0L }
+        val totalNoteBlocksPlayed = players.sumOf { it.detailedStats?.noteBlocksPlayed ?: 0L }
+        val totalCakeSlicesEaten = players.sumOf { it.detailedStats?.cakeSlicesEaten ?: 0L }
+        val totalItemsDropped = players.sumOf { it.detailedStats?.itemsDropped ?: 0L }
+        val totalDamageBlocked = players.sumOf { it.detailedStats?.damageBlocked ?: 0L }
+        val totalRaidWins = players.sumOf { it.detailedStats?.raidWins ?: 0L }
+        val totalItemsEnchanted = players.sumOf { it.detailedStats?.itemsEnchanted ?: 0L }
 
         return ServerTotals(
             totalBlocksMined = totalBlocksMined,
@@ -276,7 +336,19 @@ class StatsService(
             totalFishCaught = totalFishCaught,
             totalAnimalsBred = totalAnimalsBred,
             totalVillagerTrades = totalVillagerTrades,
-            totalTimesSlept = totalTimesSlept
+            totalTimesSlept = totalTimesSlept,
+            // NEW totals
+            totalMobKills = totalMobKills,
+            totalEnderChestsOpened = totalEnderChestsOpened,
+            totalBarrelsOpened = totalBarrelsOpened,
+            totalShulkerBoxesOpened = totalShulkerBoxesOpened,
+            totalMinecartDistance = totalMinecartDistance,
+            totalNoteBlocksPlayed = totalNoteBlocksPlayed,
+            totalCakeSlicesEaten = totalCakeSlicesEaten,
+            totalItemsDropped = totalItemsDropped,
+            totalDamageBlocked = totalDamageBlocked,
+            totalRaidWins = totalRaidWins,
+            totalItemsEnchanted = totalItemsEnchanted
         )
     }
 }

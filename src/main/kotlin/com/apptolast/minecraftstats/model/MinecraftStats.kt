@@ -79,6 +79,8 @@ data class PlayerStatsSummary(
 
 /**
  * Detailed statistics extracted from minecraft:custom
+ * Based on official Minecraft statistics: https://minecraft.wiki/w/Statistics
+ * Updated for Minecraft 1.21+
  */
 data class DetailedPlayerStats(
     // Combat
@@ -86,7 +88,13 @@ data class DetailedPlayerStats(
     val damageTaken: Long = 0,
     val damageBlocked: Long = 0,
     val playerKills: Long = 0,
-    
+    val mobKills: Long = 0,  // minecraft:mob_kills (different from killed category)
+    // Detailed damage stats (NEW - from official wiki)
+    val damageDealtAbsorbed: Long = 0,   // minecraft:damage_dealt_absorbed
+    val damageDealtResisted: Long = 0,   // minecraft:damage_dealt_resisted
+    val damageAbsorbed: Long = 0,        // minecraft:damage_absorbed
+    val damageResisted: Long = 0,        // minecraft:damage_resisted
+
     // Movement (in cm, convert to km for display)
     val walkDistance: Long = 0,
     val sprintDistance: Long = 0,
@@ -102,9 +110,17 @@ data class DetailedPlayerStats(
     val crouchDistance: Long = 0,
     val walkOnWaterDistance: Long = 0,
     val walkUnderWaterDistance: Long = 0,
-    
-    // Interactions
+    // NEW distances from official wiki
+    val minecartDistance: Long = 0,      // minecraft:minecart_one_cm
+
+    // Interactions - Containers (NEW from official wiki)
     val chestsOpened: Long = 0,
+    val enderChestsOpened: Long = 0,     // minecraft:open_enderchest
+    val barrelsOpened: Long = 0,         // minecraft:open_barrel
+    val shulkerBoxesOpened: Long = 0,    // minecraft:open_shulker_box
+    val trappedChestsTriggered: Long = 0, // minecraft:trigger_trapped_chest
+
+    // Interactions - Workstations
     val craftingTableUses: Long = 0,
     val furnaceUses: Long = 0,
     val anvilUses: Long = 0,
@@ -115,7 +131,13 @@ data class DetailedPlayerStats(
     val stonecutterUses: Long = 0,
     val smokerUses: Long = 0,
     val blastFurnaceUses: Long = 0,
-    
+    // NEW workstations from official wiki
+    val campfireUses: Long = 0,          // minecraft:interact_with_campfire
+    val cartographyTableUses: Long = 0,  // minecraft:interact_with_cartography_table
+    val loomUses: Long = 0,              // minecraft:interact_with_loom
+    val grindstoneUses: Long = 0,        // minecraft:interact_with_grindstone
+    val lecternUses: Long = 0,           // minecraft:interact_with_lectern
+
     // Actions
     val timesSlept: Long = 0,
     val sneakTime: Long = 0,
@@ -127,11 +149,23 @@ data class DetailedPlayerStats(
     val raidWins: Long = 0,
     val raidTriggers: Long = 0,
     val targetsHit: Long = 0,
-    
+    // NEW actions from official wiki
+    val noteBlocksPlayed: Long = 0,      // minecraft:play_noteblock
+    val noteBlocksTuned: Long = 0,       // minecraft:tune_noteblock
+    val cakeSlicesEaten: Long = 0,       // minecraft:eat_cake_slice
+    val cauldronsUsed: Long = 0,         // minecraft:use_cauldron
+    val cauldronsFilled: Long = 0,       // minecraft:fill_cauldron
+    val flowersPotted: Long = 0,         // minecraft:pot_flower
+    val armorCleaned: Long = 0,          // minecraft:clean_armor
+    val bannersCleaned: Long = 0,        // minecraft:clean_banner
+    val shulkerBoxesCleaned: Long = 0,   // minecraft:clean_shulker_box
+    val gamesLeft: Long = 0,             // minecraft:leave_game
+    val itemsDropped: Long = 0,          // minecraft:drop
+
     // Villagers
     val villagersTraded: Long = 0,
     val villagersTalked: Long = 0,
-    
+
     // Time-based (in ticks, 20 ticks = 1 second)
     val timeSinceRest: Long = 0,
     val timeSinceDeath: Long = 0,
@@ -160,7 +194,16 @@ data class Leaderboards(
     val mostDamageDealt: List<LeaderboardEntry> = emptyList(),
     val mostJumps: List<LeaderboardEntry> = emptyList(),
     val mostFishCaught: List<LeaderboardEntry> = emptyList(),
-    val mostVillagerTrades: List<LeaderboardEntry> = emptyList()
+    val mostVillagerTrades: List<LeaderboardEntry> = emptyList(),
+    // NEW leaderboards from official wiki stats
+    val mostAnimalsBreed: List<LeaderboardEntry> = emptyList(),
+    val mostDamageBlocked: List<LeaderboardEntry> = emptyList(),
+    val mostEnderChestsOpened: List<LeaderboardEntry> = emptyList(),
+    val mostMinecartDistance: List<LeaderboardEntry> = emptyList(),
+    val mostCakeSlicesEaten: List<LeaderboardEntry> = emptyList(),
+    val mostRaidWins: List<LeaderboardEntry> = emptyList(),
+    val mostItemsEnchanted: List<LeaderboardEntry> = emptyList(),
+    val mostItemsDropped: List<LeaderboardEntry> = emptyList()
 )
 
 data class LeaderboardEntry(
@@ -187,13 +230,42 @@ data class ServerTotals(
     val totalFishCaught: Long = 0,
     val totalAnimalsBred: Long = 0,
     val totalVillagerTrades: Long = 0,
-    val totalTimesSlept: Long = 0
+    val totalTimesSlept: Long = 0,
+    // NEW totals from official wiki (minecraft:custom)
+    val totalMobKills: Long = 0,
+    val totalEnderChestsOpened: Long = 0,
+    val totalBarrelsOpened: Long = 0,
+    val totalShulkerBoxesOpened: Long = 0,
+    val totalMinecartDistance: Long = 0,
+    val totalNoteBlocksPlayed: Long = 0,
+    val totalCakeSlicesEaten: Long = 0,
+    val totalItemsDropped: Long = 0,
+    val totalDamageBlocked: Long = 0,
+    val totalRaidWins: Long = 0,
+    val totalItemsEnchanted: Long = 0
 )
 
 // ============== Log & Events Models ==============
 
+/**
+ * Types of log events captured from Minecraft server logs
+ * Based on Minecraft server log format
+ */
 enum class LogEntryType {
-    CHAT, JOIN, LEAVE, DEATH, ADVANCEMENT, OTHER
+    CHAT,           // Player chat messages
+    JOIN,           // Player joined the game
+    LEAVE,          // Player left the game
+    DEATH,          // Player death (all causes)
+    ADVANCEMENT,    // Player got an advancement/goal/challenge
+    COMMAND,        // Player issued a server command
+    KICK,           // Player was kicked
+    BAN,            // Player was banned
+    WARNING,        // Server warnings
+    SERVER_START,   // Server started
+    SERVER_STOP,    // Server stopped/stopping
+    WORLD_SAVE,     // World saved
+    PVP_KILL,       // Player killed another player
+    OTHER           // Other log entries
 }
 
 data class LogEntry(
@@ -410,4 +482,101 @@ data class DiamondLeaderboardEntry(
     val playerName: String,
     val playerUuid: String,
     val total: Long
+)
+
+// ============== Watchdog / Surveillance System ==============
+
+/**
+ * Types of suspicious activity that can be detected
+ */
+enum class SuspiciousActivityType {
+    PVP_KILL,              // Killed another player
+    MASS_DEATHS,           // Many deaths in short time
+    LAVA_DEATHS,           // Multiple lava deaths (possible trap)
+    FALL_DEATHS,           // Multiple fall deaths (possible trap)
+    HIGH_DAMAGE_DEALT,     // Dealt a lot of damage quickly
+    LONG_SESSION,          // Very long play session
+    KICK,                  // Player was kicked
+    BAN,                   // Player was banned
+    SUSPICIOUS_COMMAND     // Suspicious server command
+}
+
+enum class AlertSeverity {
+    LOW,      // Informational
+    MEDIUM,   // Worth monitoring
+    HIGH,     // Action may be needed
+    CRITICAL  // Immediate attention
+}
+
+/**
+ * Represents a suspicious activity alert
+ */
+data class SuspiciousActivity(
+    val type: SuspiciousActivityType,
+    val playerName: String,
+    val playerUuid: String?,
+    val description: String,
+    val timestamp: String,
+    val severity: AlertSeverity,
+    val details: Map<String, Any> = emptyMap()
+)
+
+/**
+ * Player watch profile with risk metrics
+ */
+data class PlayerWatchProfile(
+    val uuid: String,
+    val name: String,
+    val pvpKills: Long,
+    val pvpDeaths: Long,
+    val killDeathRatio: Double,
+    val totalDeaths: Long,
+    val lavaDeaths: Long,
+    val fallDeaths: Long,
+    val timesKicked: Long,
+    val totalDamageDealt: Long,
+    val totalItemsDropped: Long,
+    val averageSessionMinutes: Long,
+    val longestSessionMinutes: Long,
+    val lastActivity: String,
+    val riskScore: Int,  // 0-100
+    val recentAlerts: List<SuspiciousActivity>
+)
+
+/**
+ * Server-wide watchdog statistics
+ */
+data class ServerWatchStats(
+    val totalPvpKills: Long,
+    val pvpLeaderboard: List<PvpLeaderboardEntry>,
+    val recentAlerts: List<SuspiciousActivity>,
+    val highRiskPlayers: List<PlayerWatchProfile>,
+    val deathsByCategory: Map<String, Long>,
+    val totalKicks: Long,
+    val totalBans: Long
+)
+
+/**
+ * PVP leaderboard entry
+ */
+data class PvpLeaderboardEntry(
+    val playerName: String,
+    val playerUuid: String?,
+    val kills: Long,
+    val deaths: Long,
+    val kd: Double
+)
+
+/**
+ * Death analysis for surveillance
+ */
+data class DeathAnalysis(
+    val totalDeaths: Long,
+    val deathsByPlayer: Map<String, Long>,
+    val deathsByCause: Map<String, Long>,
+    val lavaDeaths: Long,
+    val fallDeaths: Long,
+    val pvpDeaths: Long,
+    val mobDeaths: Long,
+    val environmentDeaths: Long
 )

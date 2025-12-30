@@ -25,7 +25,9 @@ class LiveUpdateService(
     private val serverStatusService: ServerStatusService,
     private val logService: LogService,
     private val statsService: StatsService,
-    private val itemStatsService: ItemStatsService
+    private val itemStatsService: ItemStatsService,
+    private val sessionAnalysisService: SessionAnalysisService,
+    private val watchdogService: WatchdogService
 ) {
     private val logger = LoggerFactory.getLogger(LiveUpdateService::class.java)
     
@@ -214,6 +216,100 @@ class LiveUpdateService(
             logger.debug("Broadcasted diamond stats")
         } catch (e: Exception) {
             logger.error("Error broadcasting diamond stats: ${e.message}")
+        }
+    }
+
+    /**
+     * Broadcast server records every 5 seconds (real-time)
+     * Makes the Records section fully dynamic without page refresh
+     */
+    @Scheduled(fixedRate = 5000)
+    fun broadcastRecords() {
+        try {
+            val records = itemStatsService.getServerRecords()
+            val update = createLiveUpdate("RECORDS", records)
+            messagingTemplate.convertAndSend("/topic/records", update)
+            logger.debug("Broadcasted server records")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting records: ${e.message}")
+        }
+    }
+
+    /**
+     * Broadcast activity statistics every 10 seconds (real-time)
+     * Makes the Activity Analysis section fully dynamic
+     */
+    @Scheduled(fixedRate = 10000)
+    fun broadcastActivityStats() {
+        try {
+            val activity = sessionAnalysisService.getActivityStats(30)
+            val update = createLiveUpdate("ACTIVITY", activity)
+            messagingTemplate.convertAndSend("/topic/activity", update)
+            logger.debug("Broadcasted activity stats")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting activity stats: ${e.message}")
+        }
+    }
+
+    /**
+     * Broadcast session statistics every 5 seconds (real-time)
+     * Makes the Sessions section fully dynamic
+     */
+    @Scheduled(fixedRate = 5000)
+    fun broadcastSessionStats() {
+        try {
+            val sessions = sessionAnalysisService.getSessionStats(30)
+            val update = createLiveUpdate("SESSIONS", sessions)
+            messagingTemplate.convertAndSend("/topic/sessions", update)
+            logger.debug("Broadcasted session stats")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting session stats: ${e.message}")
+        }
+    }
+
+    /**
+     * Broadcast watchdog statistics every 5 seconds (real-time)
+     * Makes the Watchdog/Surveillance section fully dynamic
+     */
+    @Scheduled(fixedRate = 5000)
+    fun broadcastWatchdogStats() {
+        try {
+            val watchdog = watchdogService.getWatchdogStats(30)
+            val update = createLiveUpdate("WATCHDOG", watchdog)
+            messagingTemplate.convertAndSend("/topic/watchdog", update)
+            logger.debug("Broadcasted watchdog stats")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting watchdog stats: ${e.message}")
+        }
+    }
+
+    /**
+     * Broadcast PVP statistics every 5 seconds (real-time)
+     */
+    @Scheduled(fixedRate = 5000)
+    fun broadcastPvpStats() {
+        try {
+            val pvp = watchdogService.getPvpStats(30)
+            val update = createLiveUpdate("PVP_STATS", pvp)
+            messagingTemplate.convertAndSend("/topic/pvp", update)
+            logger.debug("Broadcasted PVP stats")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting PVP stats: ${e.message}")
+        }
+    }
+
+    /**
+     * Broadcast death analysis every 10 seconds (real-time)
+     */
+    @Scheduled(fixedRate = 10000)
+    fun broadcastDeathAnalysis() {
+        try {
+            val deaths = watchdogService.getDeathAnalysis(30)
+            val update = createLiveUpdate("DEATH_ANALYSIS", deaths)
+            messagingTemplate.convertAndSend("/topic/deaths", update)
+            logger.debug("Broadcasted death analysis")
+        } catch (e: Exception) {
+            logger.error("Error broadcasting death analysis: ${e.message}")
         }
     }
 }
