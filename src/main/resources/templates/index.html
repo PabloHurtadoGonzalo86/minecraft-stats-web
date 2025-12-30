@@ -651,24 +651,64 @@
                 <i class="fas fa-rss text-red-400 mr-3 live-indicator"></i>
                 Eventos en Vivo (⚡ cada 1s)
             </h2>
+
+            <!-- Event Statistics Summary (30 days) -->
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
+                <div class="bg-gradient-to-br from-green-900/30 to-green-700/20 rounded-lg p-3 text-center">
+                    <i class="fas fa-sign-in-alt text-green-400 text-xl mb-1"></i>
+                    <p class="text-lg font-bold text-green-400" id="event-count-join">-</p>
+                    <p class="text-xs text-gray-400">Conexiones</p>
+                </div>
+                <div class="bg-gradient-to-br from-red-900/30 to-red-700/20 rounded-lg p-3 text-center">
+                    <i class="fas fa-sign-out-alt text-red-400 text-xl mb-1"></i>
+                    <p class="text-lg font-bold text-red-400" id="event-count-leave">-</p>
+                    <p class="text-xs text-gray-400">Desconexiones</p>
+                </div>
+                <div class="bg-gradient-to-br from-pink-900/30 to-pink-700/20 rounded-lg p-3 text-center">
+                    <i class="fas fa-skull text-pink-400 text-xl mb-1"></i>
+                    <p class="text-lg font-bold text-pink-400" id="event-count-death">-</p>
+                    <p class="text-xs text-gray-400">Muertes</p>
+                </div>
+                <div class="bg-gradient-to-br from-yellow-900/30 to-yellow-700/20 rounded-lg p-3 text-center">
+                    <i class="fas fa-trophy text-yellow-400 text-xl mb-1"></i>
+                    <p class="text-lg font-bold text-yellow-400" id="event-count-advancement">-</p>
+                    <p class="text-xs text-gray-400">Logros</p>
+                </div>
+                <div class="bg-gradient-to-br from-blue-900/30 to-blue-700/20 rounded-lg p-3 text-center">
+                    <i class="fas fa-comments text-blue-400 text-xl mb-1"></i>
+                    <p class="text-lg font-bold text-blue-400" id="event-count-chat">-</p>
+                    <p class="text-xs text-gray-400">Mensajes</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-900/30 to-purple-700/20 rounded-lg p-3 text-center">
+                    <i class="fas fa-skull-crossbones text-purple-400 text-xl mb-1"></i>
+                    <p class="text-lg font-bold text-purple-400" id="event-count-pvp">-</p>
+                    <p class="text-xs text-gray-400">PVP Kills</p>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mb-4 text-center">📊 Resumen de eventos de los últimos 30 días</p>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Recent Events -->
                 <div class="bg-gray-800/50 rounded-lg p-6">
-                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <h3 class="text-lg font-bold mb-2 flex items-center">
                         <i class="fas fa-bolt text-yellow-400 mr-2"></i>
                         Actividad Reciente
+                        <span class="ml-2 text-xs text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded">Hoy</span>
                     </h3>
+                    <p class="text-xs text-gray-500 mb-3">Eventos del archivo latest.log (sesión actual del servidor)</p>
                     <div id="events-feed" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Esperando eventos...</p>
                     </div>
                 </div>
-                
+
                 <!-- Chat -->
                 <div class="bg-gray-800/50 rounded-lg p-6">
-                    <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <h3 class="text-lg font-bold mb-2 flex items-center">
                         <i class="fas fa-comments text-blue-400 mr-2"></i>
                         Chat del Servidor
+                        <span class="ml-2 text-xs text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded">Hoy</span>
                     </h3>
+                    <p class="text-xs text-gray-500 mb-3">Mensajes de chat de la sesión actual</p>
                     <div id="chat-feed" class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2">
                         <p class="text-gray-500 text-sm">Cargando mensajes...</p>
                     </div>
@@ -900,7 +940,8 @@
                     loadRecords(),
                     loadActivityStats(),
                     loadSessionStats(),
-                    loadWatchdogStats()
+                    loadWatchdogStats(),
+                    loadEventStats()
                 ]);
 
             } catch (e) {
@@ -1385,6 +1426,42 @@
         async function loadSessionStats() {
             const sessions = await safeFetch('/api/sessions?days=30');
             if (sessions) renderSessionsFromWS(sessions);
+        }
+
+        // ================= EVENT HISTORY STATISTICS =================
+        async function loadEventStats() {
+            const events = await safeFetch('/api/events/history?days=30&limit=2000');
+            if (events) {
+                renderEventCounts(events);
+            }
+        }
+
+        function renderEventCounts(events) {
+            if (!events || !Array.isArray(events)) return;
+
+            // Count events by type
+            const counts = {
+                JOIN: 0,
+                LEAVE: 0,
+                DEATH: 0,
+                ADVANCEMENT: 0,
+                CHAT: 0,
+                PVP_KILL: 0
+            };
+
+            events.forEach(event => {
+                if (counts.hasOwnProperty(event.type)) {
+                    counts[event.type]++;
+                }
+            });
+
+            // Update UI
+            animateStat('event-count-join', formatNumber(counts.JOIN));
+            animateStat('event-count-leave', formatNumber(counts.LEAVE));
+            animateStat('event-count-death', formatNumber(counts.DEATH));
+            animateStat('event-count-advancement', formatNumber(counts.ADVANCEMENT));
+            animateStat('event-count-chat', formatNumber(counts.CHAT));
+            animateStat('event-count-pvp', formatNumber(counts.PVP_KILL));
         }
 
         // ================= WATCHDOG / SURVEILLANCE =================
