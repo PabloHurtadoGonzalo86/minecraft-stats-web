@@ -869,12 +869,20 @@
                     updateServerStatus(status);
                 }
 
-                // Render events (with null check)
+                // Render events (with null check and empty handling)
                 if (events && Array.isArray(events)) {
-                    events.reverse().forEach(e => addEvent(e, null));
+                    if (events.length === 0) {
+                        document.getElementById('events-feed').innerHTML = '<p class="text-gray-500 text-sm">Sin eventos recientes</p>';
+                    } else {
+                        events.reverse().forEach(e => addEvent(e, null));
+                    }
                 }
                 if (chat && Array.isArray(chat)) {
-                    chat.reverse().forEach(addChatMessage);
+                    if (chat.length === 0) {
+                        document.getElementById('chat-feed').innerHTML = '<p class="text-gray-500 text-sm">Sin mensajes de chat recientes</p>';
+                    } else {
+                        chat.reverse().forEach(addChatMessage);
+                    }
                 }
 
                 // Load additional data (errors are handled individually)
