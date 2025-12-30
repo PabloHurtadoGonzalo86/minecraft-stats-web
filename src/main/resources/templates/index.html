@@ -18,12 +18,13 @@
         @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
         .stat-update { animation: statPulse 0.5s ease-out; }
         @keyframes statPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); color: #22c55e; } 100% { transform: scale(1); } }
-        /* Clock tick animation */
-        .clock-tick { animation: clockTick 0.3s ease-out; }
-        @keyframes clockTick {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); text-shadow: 0 0 10px rgba(34, 197, 94, 0.5); }
-            100% { transform: scale(1); }
+        /* Smooth digital clock style */
+        .clock-display {
+            font-variant-numeric: tabular-nums; /* Monospace numbers for no jumping */
+            transition: text-shadow 0.15s ease-out;
+        }
+        .clock-glow {
+            text-shadow: 0 0 8px rgba(34, 197, 94, 0.6), 0 0 16px rgba(34, 197, 94, 0.3);
         }
         /* Custom scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
@@ -54,7 +55,7 @@
                 <span>•</span>
                 <span class="flex items-center text-xl font-mono text-green-400">
                     <i class="fas fa-clock mr-2"></i>
-                    <span id="server-time" class="live-indicator">--:--:--</span>
+                    <span id="server-time" class="clock-display">--:--:--</span>
                 </span>
                 <span>•</span>
                 <span class="text-xs">
@@ -1133,16 +1134,14 @@
             const timeEl = document.getElementById('server-time');
             const newTime = serverTime.time;
 
-            // Only animate if time actually changed
+            // Update time smoothly without jerky animations
             if (timeEl && newTime !== lastTimeValue) {
                 timeEl.textContent = newTime;
                 lastTimeValue = newTime;
 
-                // Add tick animation
-                timeEl.classList.remove('clock-tick');
-                // Force reflow to restart animation
-                void timeEl.offsetWidth;
-                timeEl.classList.add('clock-tick');
+                // Subtle glow effect on change (smooth CSS transition)
+                timeEl.classList.add('clock-glow');
+                setTimeout(() => timeEl.classList.remove('clock-glow'), 150);
             }
 
             document.getElementById('server-date').textContent = `${serverTime.dayOfWeek}, ${serverTime.date}`;
