@@ -81,18 +81,27 @@ class WatchdogService(
 
         val deathsByCause = categorizeDeaths(events)
 
+        // FIX: Calculate deaths properly without double counting
         val lavaDeaths = deathEvents.count { it.message.contains("lava", ignoreCase = true) }.toLong()
         val fallDeaths = deathEvents.count {
             it.message.contains("fell", ignoreCase = true) ||
-            it.message.contains("hit the ground", ignoreCase = true)
+            it.message.contains("hit the ground", ignoreCase = true) ||
+            it.message.contains("cayo", ignoreCase = true)
         }.toLong()
         val pvpDeaths = events.count { it.type == LogEntryType.PVP_KILL }.toLong()
-        val mobDeaths = deathEvents.count {
-            it.message.contains("slain by", ignoreCase = true) ||
-            it.message.contains("killed by", ignoreCase = true)
-        }.toLong() - pvpDeaths
 
-        val environmentDeaths = deathEvents.size.toLong() - lavaDeaths - fallDeaths - pvpDeaths - mobDeaths
+        // FIX: Mob deaths should exclude lava deaths and not subtract pvpDeaths blindly
+        val mobDeaths = deathEvents.count { death ->
+            (death.message.contains("slain by", ignoreCase = true) ||
+             death.message.contains("killed by", ignoreCase = true) ||
+             death.message.contains("shot by", ignoreCase = true) ||
+             death.message.contains("asesinado por", ignoreCase = true)) &&
+            !death.message.contains("lava", ignoreCase = true)
+        }.toLong()
+
+        // FIX: Environment deaths is the remainder after all categorized deaths
+        val categorizedDeaths = lavaDeaths + fallDeaths + mobDeaths
+        val environmentDeaths = (deathEvents.size.toLong() - categorizedDeaths).coerceAtLeast(0)
 
         return DeathAnalysis(
             totalDeaths = deathEvents.size.toLong(),
@@ -102,7 +111,7 @@ class WatchdogService(
             fallDeaths = fallDeaths,
             pvpDeaths = pvpDeaths,
             mobDeaths = mobDeaths.coerceAtLeast(0),
-            environmentDeaths = environmentDeaths.coerceAtLeast(0)
+            environmentDeaths = environmentDeaths
         )
     }
 
@@ -159,7 +168,16 @@ class WatchdogService(
         pvpKillsByPlayer: Map<String, Long>,
         serverStats: ServerStats
     ): List<PvpLeaderboardEntry> {
+        // Get list of known player names from server stats
+        val knownPlayerNames = serverStats.players.map { it.name }.toSet()
+
         return pvpKillsByPlayer.entries
+            // FIX: Filter out "Unknown" and validate against known players
+            .filter { (name, _) ->
+                name != "Unknown" &&
+                name.isNotBlank() &&
+                knownPlayerNames.contains(name)
+            }
             .sortedByDescending { it.value }
             .take(10)
             .map { (name, kills) ->
@@ -292,15 +310,56 @@ class WatchdogService(
 
     private fun categorizeDeaths(events: List<LogEntry>): Map<String, Long> {
         val deaths = events.filter { it.type == LogEntryType.DEATH }
+        val pvpKills = events.count { it.type == LogEntryType.PVP_KILL }.toLong()
+
+        // Count each category separately
+        val lavaCount = deaths.count { it.message.contains("lava", ignoreCase = true) }.toLong()
+        val fallCount = deaths.count {
+            it.message.contains("fell", ignoreCase = true) ||
+            it.message.contains("hit the ground", ignoreCase = true) ||
+            it.message.contains("cayo", ignoreCase = true)
+        }.toLong()
+        val drownCount = deaths.count {
+            it.message.contains("drowned", ignoreCase = true) ||
+            it.message.contains("ahogo", ignoreCase = true)
+        }.toLong()
+        val fireCount = deaths.count {
+            it.message.contains("fire", ignoreCase = true) ||
+            it.message.contains("burned", ignoreCase = true) ||
+            it.message.contains("flames", ignoreCase = true) ||
+            it.message.contains("incendio", ignoreCase = true) ||
+            it.message.contains("quemado", ignoreCase = true)
+        }.toLong()
+        val explosionCount = deaths.count {
+            it.message.contains("blew up", ignoreCase = true) ||
+            it.message.contains("blown up", ignoreCase = true) ||
+            it.message.contains("exploto", ignoreCase = true)
+        }.toLong()
+
+        // Mobs: slain/killed but NOT including lava (which also contains these words sometimes)
+        val mobCount = deaths.count { death ->
+            (death.message.contains("slain by", ignoreCase = true) ||
+             death.message.contains("killed by", ignoreCase = true) ||
+             death.message.contains("shot by", ignoreCase = true) ||
+             death.message.contains("asesinado por", ignoreCase = true) ||
+             death.message.contains("matado por", ignoreCase = true)) &&
+            // Exclude lava deaths that might have "killed by" in message
+            !death.message.contains("lava", ignoreCase = true)
+        }.toLong()
+
+        // FIX: "Otros" should be the remainder, not counting ALL deaths
+        val categorizedCount = lavaCount + fallCount + drownCount + fireCount + explosionCount + mobCount
+        val otrosCount = (deaths.size.toLong() - categorizedCount).coerceAtLeast(0)
+
         return mapOf(
-            "Lava" to deaths.count { it.message.contains("lava", ignoreCase = true) }.toLong(),
-            "Caida" to deaths.count { it.message.contains("fell", ignoreCase = true) || it.message.contains("hit the ground", ignoreCase = true) }.toLong(),
-            "Ahogamiento" to deaths.count { it.message.contains("drowned", ignoreCase = true) || it.message.contains("ahogo", ignoreCase = true) }.toLong(),
-            "Fuego" to deaths.count { it.message.contains("fire", ignoreCase = true) || it.message.contains("burned", ignoreCase = true) || it.message.contains("flames", ignoreCase = true) }.toLong(),
-            "Explosion" to deaths.count { it.message.contains("blew up", ignoreCase = true) || it.message.contains("exploto", ignoreCase = true) }.toLong(),
-            "PVP" to events.count { it.type == LogEntryType.PVP_KILL }.toLong(),
-            "Mobs" to deaths.count { it.message.contains("slain by", ignoreCase = true) || it.message.contains("killed by", ignoreCase = true) }.toLong(),
-            "Otros" to deaths.count { true }.toLong()
+            "Lava" to lavaCount,
+            "Caida" to fallCount,
+            "Ahogamiento" to drownCount,
+            "Fuego" to fireCount,
+            "Explosion" to explosionCount,
+            "PVP" to pvpKills,
+            "Mobs" to mobCount,
+            "Otros" to otrosCount
         )
     }
 

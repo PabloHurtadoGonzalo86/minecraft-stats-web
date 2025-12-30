@@ -27,10 +27,52 @@ class LogService(
 
     // Regex patterns for parsing log entries
     private val timestampPattern = Regex("""\[(\d{2}:\d{2}:\d{2})\]""")
-    private val chatPattern = Regex("""\[Server thread/INFO\]: \[Not Secure\] <(\w+)> (.+)""")
+    // FIX: [Not Secure] is optional - some servers don't have it
+    private val chatPattern = Regex("""\[Server thread/INFO\]: (?:\[Not Secure\] )?<(\w+)> (.+)""")
     private val joinPattern = Regex("""\[Server thread/INFO\]: (\w+)\[.+\] logged in""")
     private val leavePattern = Regex("""\[Server thread/INFO\]: (\w+) left the game""")
     private val advancementPattern = Regex("""\[Server thread/INFO\]: (\w+) has (made the advancement|completed the challenge|reached the goal) \[(.+)\]""")
+
+    // List of known hostile mobs that can kill players (Minecraft 1.21.4 official list)
+    // Source: https://minecraft.wiki/w/Mob
+    private val knownMobs = setOf(
+        // Hostile mobs (common)
+        "Zombie", "Skeleton", "Creeper", "Spider", "Enderman", "Witch", "Slime",
+        "Pillager", "Vindicator", "Evoker", "Ravager", "Vex", "Illusioner",
+        "Warden", "Blaze", "Ghast", "Piglin", "Hoglin", "Zoglin",
+        "Drowned", "Husk", "Stray", "Phantom", "Guardian", "Shulker", "Silverfish",
+        "Endermite", "Breeze", "Bogged",
+        // Cave Spider is two words but displays as "Cave Spider"
+        "Cave Spider",
+        // Magma Cube
+        "Magma Cube", "Magma",
+        // Neutral mobs that can attack
+        "Wolf", "Bee", "Goat", "Llama", "Panda", "Dolphin", "Fox",
+        "Polar Bear", "Polar",
+        "Iron Golem", "Iron",
+        "Snow Golem", "Snow",
+        // Boss mobs
+        "Ender Dragon", "Dragon",
+        "Wither",
+        "Elder Guardian", "Elder",
+        "Giant",
+        // Variants (prefixes/suffixes)
+        "Baby Zombie", "Baby",
+        "Charged Creeper", "Charged",
+        "Zombified Piglin", "Zombified",
+        "Zombie Pigman", "Pigman",
+        "Zombie Villager",
+        "Skeleton Horse",
+        "Zombie Horse",
+        // Wither Skeleton
+        "Wither Skeleton",
+        // Strider (neutral but can push into lava)
+        "Strider",
+        // Villager (cannot kill but appears in some messages)
+        "Villager",
+        // Named mobs (TNT, arrows, tridents)
+        "TNT", "Arrow", "Trident", "Fireball", "Firework"
+    )
 
     // NEW patterns for additional events
     private val commandPattern = Regex("""\[Server thread/INFO\]: (\w+) issued server command: /(.+)""")
@@ -252,7 +294,8 @@ class LogService(
     }
     
     fun getRecentChat(maxMessages: Int = 30): List<LogEntry> {
-        return getRecentLogs(500)
+        // FIX: Read more logs to ensure we get enough chat messages
+        return getRecentLogs(2000)
             .filter { it.type == LogEntryType.CHAT }
             .takeLast(maxMessages)
     }
@@ -331,8 +374,14 @@ class LogService(
         pvpKillPattern.find(line)?.let { match ->
             val victim = match.groupValues[1]
             val killer = match.groupValues[3]
-            // Check if killer is a player name (not a mob)
-            if (killer.first().isUpperCase() && !killer.contains("_")) {
+            // FIX: Check if killer is a player name (not a mob) using knownMobs set
+            // Player names: start with letter, no spaces, no mob keywords
+            val isMob = knownMobs.any { mobName ->
+                killer.equals(mobName, ignoreCase = true) ||
+                killer.startsWith(mobName, ignoreCase = true) ||
+                killer.contains(mobName, ignoreCase = true)
+            }
+            if (!isMob && killer.first().isLetter() && !killer.contains(" ")) {
                 return LogEntry(
                     timestamp = timestamp,
                     fullDateTime = fullDateTimeStr,
@@ -477,31 +526,83 @@ class LogService(
 
     /**
      * Translate death messages to Spanish
+     * Source: https://minecraft.wiki/w/Death_messages (Minecraft 1.21.4)
      */
     private fun translateDeathMessage(message: String): String {
         return message
+            // Combat - Melee
             .replace("was slain by", "fue asesinado por")
             .replace("was killed by", "fue matado por")
+            .replace("got finished off by", "fue rematado por")
+            .replace("was pummeled by", "fue golpeado por")
+            // Combat - Ranged
             .replace("was shot by", "fue disparado por")
             .replace("was fireballed by", "fue boleado por")
-            .replace("drowned", "se ahogo")
-            .replace("fell from a high place", "cayo desde un lugar alto")
+            .replace("was impaled by", "fue empalado por")
+            .replace("was skewered by", "fue ensartado por")
+            // Fall damage
             .replace("hit the ground too hard", "golpeo el suelo muy fuerte")
+            .replace("fell from a high place", "cayo desde un lugar alto")
+            .replace("fell off a ladder", "cayo de una escalera")
+            .replace("fell off some vines", "cayo de unas enredaderas")
+            .replace("fell off scaffolding", "cayo del andamio")
+            .replace("fell off some weeping vines", "cayo de enredaderas lloronas")
+            .replace("fell off some twisting vines", "cayo de enredaderas retorcidas")
+            .replace("fell while climbing", "cayo mientras escalaba")
+            .replace("was doomed to fall", "estaba condenado a caer")
+            .replace("fell too far and was finished by", "cayo muy lejos y fue rematado por")
+            // Drowning
+            .replace("drowned whilst trying to escape", "se ahogo intentando escapar de")
+            .replace("drowned", "se ahogo")
+            // Fire/Lava
             .replace("went up in flames", "se incendio")
             .replace("burned to death", "murio quemado")
+            .replace("was burnt to a crisp whilst fighting", "se quemo luchando contra")
+            .replace("walked into fire whilst fighting", "entro al fuego luchando contra")
+            .replace("tried to swim in lava to escape", "intento nadar en lava para escapar de")
             .replace("tried to swim in lava", "intento nadar en lava")
-            .replace("suffocated in a wall", "se asfixio en una pared")
-            .replace("starved to death", "murio de hambre")
-            .replace("withered away", "se marchito")
-            .replace("was struck by lightning", "fue alcanzado por un rayo")
-            .replace("froze to death", "murio congelado")
-            .replace("fell out of the world", "cayo al vacio")
-            .replace("blew up", "exploto")
+            // Explosions
             .replace("was blown up by", "fue explotado por")
-            .replace("experienced kinetic energy", "experimento energia cinetica")
+            .replace("blew up", "exploto")
+            .replace("was killed by [Intentional Game Design]", "fue victima del [Diseno Intencional del Juego]")
+            // Suffocation/Crushing
+            .replace("suffocated in a wall", "se asfixio en una pared")
+            .replace("was squished too much", "fue aplastado demasiado")
+            .replace("was squashed by", "fue aplastado por")
+            // Environment
             .replace("was pricked to death", "murio pinchado")
-            .replace("was squashed", "fue aplastado")
-            .replace("was impaled", "fue empalado")
+            .replace("walked into a cactus whilst trying to escape", "camino hacia un cactus escapando de")
+            .replace("was struck by lightning", "fue alcanzado por un rayo")
+            .replace("discovered the floor was lava", "descubrio que el suelo era lava")
+            .replace("froze to death", "murio congelado")
+            .replace("was frozen to death by", "murio congelado por")
+            .replace("was stung to death", "murio por picaduras")
+            .replace("was obliterated by a sonically-charged shriek", "fue destruido por un chillido sonico")
+            // Starvation
+            .replace("starved to death", "murio de hambre")
+            // Magic/Wither
+            .replace("was killed by magic", "fue matado por magia")
+            .replace("was killed by", "fue matado por")
+            .replace("using magic", "usando magia")
+            .replace("withered away whilst fighting", "se marchito luchando contra")
+            .replace("withered away", "se marchito")
+            // Kinetic energy (elytra crash)
+            .replace("experienced kinetic energy whilst trying to escape", "experimento energia cinetica escapando de")
+            .replace("experienced kinetic energy", "experimento energia cinetica")
+            // Void
+            .replace("fell out of the world", "cayo al vacio")
+            .replace("didn't want to live in the same world as", "no quiso vivir en el mismo mundo que")
+            // Thorns
+            .replace("was killed trying to hurt", "murio intentando danar a")
+            // Anvil/Stalactite
+            .replace("was squashed by a falling anvil whilst fighting", "fue aplastado por un yunque mientras luchaba contra")
+            .replace("was squashed by a falling anvil", "fue aplastado por un yunque")
+            .replace("was skewered by a falling stalactite", "fue ensartado por una estalactita")
+            .replace("was impaled on a stalagmite", "fue empalado en una estalagmita")
+            // Firework
+            .replace("went off with a bang due to a firework fired from", "exploto por un cohete disparado desde")
+            .replace("went off with a bang", "exploto con un estallido")
+            // Generic
             .replace("died", "murio")
     }
 }

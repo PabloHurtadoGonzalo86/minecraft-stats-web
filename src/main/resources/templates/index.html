@@ -699,102 +699,120 @@
         let stompClient = null;
         let cachedStats = null;
         let onlinePlayers = new Set();
-        
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 10;
+        const RECONNECT_DELAY_BASE = 5000;
+
         // ================= WEBSOCKET CONNECTION =================
         function connect() {
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
             stompClient.debug = null;
-            
+
             stompClient.connect({}, function(frame) {
+                reconnectAttempts = 0; // Reset on successful connection
                 updateConnectionStatus(true);
                 
+                // FIX: Safe parse helper for WebSocket messages
+                function safeParse(message) {
+                    try {
+                        return JSON.parse(message.body);
+                    } catch (e) {
+                        console.error('Error parsing WebSocket message:', e);
+                        return null;
+                    }
+                }
+
                 // Subscribe to server time (every 1s)
                 stompClient.subscribe('/topic/time', function(message) {
-                    const update = JSON.parse(message.body);
-                    updateServerTime(update.serverTime);
+                    const update = safeParse(message);
+                    if (update?.serverTime) updateServerTime(update.serverTime);
                 });
-                
-                // Subscribe to server status (every 30s)
+
+                // Subscribe to server status (every 1s)
                 stompClient.subscribe('/topic/status', function(message) {
-                    const update = JSON.parse(message.body);
-                    updateServerStatus(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) updateServerStatus(update.data);
                 });
-                
+
                 // Subscribe to ALL events
                 stompClient.subscribe('/topic/events', function(message) {
-                    const update = JSON.parse(message.body);
-                    addEvent(update.data, update.serverTime);
-                    if (update.type === 'CHAT') {
-                        addChatMessage(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) {
+                        addEvent(update.data, update.serverTime);
+                        if (update.type === 'CHAT') {
+                            addChatMessage(update.data);
+                        }
                     }
                 });
-                
+
                 // Subscribe to chat
                 stompClient.subscribe('/topic/chat', function(message) {
-                    const update = JSON.parse(message.body);
-                    addChatMessage(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) addChatMessage(update.data);
                 });
-                
-                // Subscribe to stats updates (every 30s) - CRITICAL FOR DYNAMIC
+
+                // Subscribe to stats updates (every 1s) - CRITICAL FOR DYNAMIC
                 stompClient.subscribe('/topic/stats', function(message) {
-                    const update = JSON.parse(message.body);
-                    cachedStats = update.data;
-                    renderAllStats(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) {
+                        cachedStats = update.data;
+                        renderAllStats(update.data);
+                    }
                 });
-                
+
                 // Subscribe to item stats
                 stompClient.subscribe('/topic/items', function(message) {
-                    const update = JSON.parse(message.body);
-                    updateItemStats(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) updateItemStats(update.data);
                 });
 
                 // Subscribe to diamond stats (real-time every 1 second)
                 stompClient.subscribe('/topic/diamonds', function(message) {
-                    const update = JSON.parse(message.body);
-                    updateDiamondStats(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) updateDiamondStats(update.data);
                 });
 
                 // Subscribe to player times
                 stompClient.subscribe('/topic/player-times', function(message) {
-                    const update = JSON.parse(message.body);
-                    updatePlayerTimes(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) updatePlayerTimes(update.data);
                 });
 
                 // Subscribe to records (every 5s) - makes Records section dynamic
                 stompClient.subscribe('/topic/records', function(message) {
-                    const update = JSON.parse(message.body);
-                    renderRecordsFromWS(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) renderRecordsFromWS(update.data);
                 });
 
                 // Subscribe to activity stats (every 10s) - makes Activity section dynamic
                 stompClient.subscribe('/topic/activity', function(message) {
-                    const update = JSON.parse(message.body);
-                    renderActivityFromWS(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) renderActivityFromWS(update.data);
                 });
 
                 // Subscribe to session stats (every 5s) - makes Sessions section dynamic
                 stompClient.subscribe('/topic/sessions', function(message) {
-                    const update = JSON.parse(message.body);
-                    renderSessionsFromWS(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) renderSessionsFromWS(update.data);
                 });
 
                 // Subscribe to watchdog stats (every 5s) - makes Watchdog section dynamic
                 stompClient.subscribe('/topic/watchdog', function(message) {
-                    const update = JSON.parse(message.body);
-                    renderWatchdogFromWS(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) renderWatchdogFromWS(update.data);
                 });
 
                 // Subscribe to PVP stats (every 5s) - makes PVP leaderboard dynamic
                 stompClient.subscribe('/topic/pvp', function(message) {
-                    const update = JSON.parse(message.body);
-                    renderPvpFromWS(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) renderPvpFromWS(update.data);
                 });
 
                 // Subscribe to death analysis (every 10s) - makes Death analysis dynamic
                 stompClient.subscribe('/topic/deaths', function(message) {
-                    const update = JSON.parse(message.body);
-                    renderDeathsFromWS(update.data);
+                    const update = safeParse(message);
+                    if (update?.data) renderDeathsFromWS(update.data);
                 });
 
                 // Load all initial data via API
@@ -802,33 +820,64 @@
                 
             }, function(error) {
                 updateConnectionStatus(false);
-                setTimeout(connect, 5000);
+                reconnectAttempts++;
+                if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+                    const delay = RECONNECT_DELAY_BASE * Math.min(reconnectAttempts, 5);
+                    console.log(`WebSocket reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${delay/1000}s`);
+                    setTimeout(connect, delay);
+                } else {
+                    console.error('Max WebSocket reconnection attempts reached. Please refresh the page.');
+                    document.getElementById('ws-status').textContent = 'WebSocket: Error - Refrescar pagina';
+                }
             });
         }
         
         // ================= INITIAL DATA LOADING =================
+        // FIX: Helper function to safely fetch and parse JSON
+        async function safeFetch(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.warn(`HTTP error for ${url}: ${response.status}`);
+                    return null;
+                }
+                return await response.json();
+            } catch (e) {
+                console.error(`Fetch error for ${url}:`, e);
+                return null;
+            }
+        }
+
         async function loadAllInitialData() {
             try {
-                // Load everything in parallel
+                // Load everything in parallel with safe fetch
                 const [stats, status, events, chat] = await Promise.all([
-                    fetch('/api/stats').then(r => r.json()),
-                    fetch('/api/status').then(r => r.json()),
-                    fetch('/api/events?limit=20').then(r => r.json()),
-                    fetch('/api/chat?limit=20').then(r => r.json())
+                    safeFetch('/api/stats'),
+                    safeFetch('/api/status'),
+                    safeFetch('/api/events?limit=20'),
+                    safeFetch('/api/chat?limit=20')
                 ]);
-                
-                // Cache and render stats
-                cachedStats = stats;
-                renderAllStats(stats);
-                
-                // Update server status
-                updateServerStatus(status);
-                
-                // Render events
-                events.reverse().forEach(e => addEvent(e, null));
-                chat.reverse().forEach(addChatMessage);
-                
-                // Load additional data
+
+                // Cache and render stats (with null check)
+                if (stats) {
+                    cachedStats = stats;
+                    renderAllStats(stats);
+                }
+
+                // Update server status (with null check)
+                if (status) {
+                    updateServerStatus(status);
+                }
+
+                // Render events (with null check)
+                if (events && Array.isArray(events)) {
+                    events.reverse().forEach(e => addEvent(e, null));
+                }
+                if (chat && Array.isArray(chat)) {
+                    chat.reverse().forEach(addChatMessage);
+                }
+
+                // Load additional data (errors are handled individually)
                 await Promise.all([
                     loadItemStats(),
                     loadDiamondStats(),
@@ -837,7 +886,7 @@
                     loadSessionStats(),
                     loadWatchdogStats()
                 ]);
-                
+
             } catch (e) {
                 console.error('Error loading initial data:', e);
             }
@@ -1145,12 +1194,8 @@
         }
 
         async function loadDiamondStats() {
-            try {
-                const data = await fetch('/api/diamonds').then(r => r.json());
-                updateDiamondStats(data);
-            } catch (e) {
-                console.error('Error loading diamond stats:', e);
-            }
+            const data = await safeFetch('/api/diamonds');
+            if (data) updateDiamondStats(data);
         }
 
         // ================= ITEM STATS =================
@@ -1165,25 +1210,21 @@
         }
         
         async function loadItemStats() {
-            try {
-                const [mined, used, crafted, killed, killedBy, pickedUp] = await Promise.all([
-                    fetch('/api/items/mined?limit=10').then(r => r.json()),
-                    fetch('/api/items/used?limit=10').then(r => r.json()),
-                    fetch('/api/items/crafted?limit=10').then(r => r.json()),
-                    fetch('/api/items/killed?limit=10').then(r => r.json()),
-                    fetch('/api/items/killed_by?limit=10').then(r => r.json()),
-                    fetch('/api/items/picked_up?limit=10').then(r => r.json())
-                ]);
-                
-                renderItemList('top-mined', mined.entries, '⛏️');
-                renderItemList('top-used', used.entries, '🖱️');
-                renderItemList('top-crafted', crafted.entries, '🔨');
-                renderItemList('top-killed', killed.entries, '💀');
-                renderItemList('top-killed-by', killedBy.entries, '☠️');
-                renderItemList('top-picked-up', pickedUp.entries, '🤲');
-            } catch (e) {
-                console.error('Error loading item stats:', e);
-            }
+            const [mined, used, crafted, killed, killedBy, pickedUp] = await Promise.all([
+                safeFetch('/api/items/mined?limit=10'),
+                safeFetch('/api/items/used?limit=10'),
+                safeFetch('/api/items/crafted?limit=10'),
+                safeFetch('/api/items/killed?limit=10'),
+                safeFetch('/api/items/killed_by?limit=10'),
+                safeFetch('/api/items/picked_up?limit=10')
+            ]);
+
+            if (mined?.entries) renderItemList('top-mined', mined.entries, '⛏️');
+            if (used?.entries) renderItemList('top-used', used.entries, '🖱️');
+            if (crafted?.entries) renderItemList('top-crafted', crafted.entries, '🔨');
+            if (killed?.entries) renderItemList('top-killed', killed.entries, '💀');
+            if (killedBy?.entries) renderItemList('top-killed-by', killedBy.entries, '☠️');
+            if (pickedUp?.entries) renderItemList('top-picked-up', pickedUp.entries, '🤲');
         }
         
         function renderItemList(containerId, items, emoji) {
@@ -1239,12 +1280,8 @@
         }
 
         async function loadRecords() {
-            try {
-                const records = await fetch('/api/records').then(r => r.json());
-                renderRecordsFromWS(records);
-            } catch (e) {
-                console.error('Error loading records:', e);
-            }
+            const records = await safeFetch('/api/records');
+            if (records) renderRecordsFromWS(records);
         }
         
         // ================= ACTIVITY STATS =================
@@ -1261,12 +1298,8 @@
         }
 
         async function loadActivityStats() {
-            try {
-                const activity = await fetch('/api/activity?days=30').then(r => r.json());
-                renderActivityFromWS(activity);
-            } catch (e) {
-                console.error('Error loading activity stats:', e);
-            }
+            const activity = await safeFetch('/api/activity?days=30');
+            if (activity) renderActivityFromWS(activity);
         }
         
         function renderHourlyChart(hourlyData) {
@@ -1319,28 +1352,20 @@
         }
 
         async function loadSessionStats() {
-            try {
-                const sessions = await fetch('/api/sessions?days=30').then(r => r.json());
-                renderSessionsFromWS(sessions);
-            } catch (e) {
-                console.error('Error loading session stats:', e);
-            }
+            const sessions = await safeFetch('/api/sessions?days=30');
+            if (sessions) renderSessionsFromWS(sessions);
         }
 
         // ================= WATCHDOG / SURVEILLANCE =================
         async function loadWatchdogStats() {
-            try {
-                const [watchdog, pvp, deaths] = await Promise.all([
-                    fetch('/api/watchdog/stats?days=30').then(r => r.json()),
-                    fetch('/api/watchdog/pvp?days=30').then(r => r.json()),
-                    fetch('/api/watchdog/deaths?days=30').then(r => r.json())
-                ]);
-                renderWatchdogFromWS(watchdog);
-                renderPvpFromWS(pvp);
-                renderDeathsFromWS(deaths);
-            } catch (e) {
-                console.error('Error loading watchdog stats:', e);
-            }
+            const [watchdog, pvp, deaths] = await Promise.all([
+                safeFetch('/api/watchdog/stats?days=30'),
+                safeFetch('/api/watchdog/pvp?days=30'),
+                safeFetch('/api/watchdog/deaths?days=30')
+            ]);
+            if (watchdog) renderWatchdogFromWS(watchdog);
+            if (pvp) renderPvpFromWS(pvp);
+            if (deaths) renderDeathsFromWS(deaths);
         }
 
         function renderWatchdogFromWS(data) {
@@ -1421,7 +1446,7 @@
             const container = document.getElementById('pvp-leaderboard');
             if (!container) return;
 
-            if (!data || data.length === 0) {
+            if (!Array.isArray(data) || data.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-sm">Sin datos PVP</p>';
                 return;
             }
@@ -1429,19 +1454,22 @@
             container.innerHTML = data.slice(0, 10).map((entry, i) => {
                 const medals = ['text-yellow-400', 'text-gray-400', 'text-orange-600'];
                 const rankClass = medals[i] || 'text-gray-500';
-                const kdColor = entry.kd >= 2 ? 'text-green-400' :
-                               entry.kd >= 1 ? 'text-yellow-400' : 'text-red-400';
+                // FIX: Handle NaN/undefined K/D ratio
+                const kd = (typeof entry.kd === 'number' && !isNaN(entry.kd)) ? entry.kd : 0;
+                const kdColor = kd >= 2 ? 'text-green-400' :
+                               kd >= 1 ? 'text-yellow-400' : 'text-red-400';
+                const kdDisplay = kd.toFixed(2);
 
                 return `
                     <div class="flex items-center justify-between py-2 border-b border-gray-700/30 last:border-0">
                         <div class="flex items-center gap-2">
                             <span class="${rankClass} w-6 font-bold">#${i+1}</span>
-                            <span>${entry.playerName}</span>
+                            <span>${entry.playerName || 'Unknown'}</span>
                         </div>
                         <div class="flex gap-4 text-sm">
-                            <span class="text-red-400">${entry.kills} <i class="fas fa-skull text-xs"></i></span>
-                            <span class="text-gray-400">${entry.deaths} <i class="fas fa-heart-crack text-xs"></i></span>
-                            <span class="${kdColor} font-mono">${entry.kd.toFixed(2)} K/D</span>
+                            <span class="text-red-400">${entry.kills || 0} <i class="fas fa-skull text-xs"></i></span>
+                            <span class="text-gray-400">${entry.deaths || 0} <i class="fas fa-heart-crack text-xs"></i></span>
+                            <span class="${kdColor} font-mono">${kdDisplay} K/D</span>
                         </div>
                     </div>
                 `;
@@ -1465,10 +1493,12 @@
 
             const breakdownContainer = document.getElementById('deaths-breakdown');
             if (breakdownContainer) {
-                const totalDeaths = data.totalDeaths || 1;
+                // FIX: Prevent division by zero
+                const totalDeaths = Math.max(data.totalDeaths || 0, 1);
                 breakdownContainer.innerHTML = deathTypes.map(dt => {
                     const count = data[dt.key] || 0;
-                    const percentage = ((count / totalDeaths) * 100).toFixed(1);
+                    // FIX: Clamp percentage between 0-100
+                    const percentage = Math.min(((count / totalDeaths) * 100), 100).toFixed(1);
                     return `
                         <div class="flex items-center justify-between py-1">
                             <span class="flex items-center gap-2">
